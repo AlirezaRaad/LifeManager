@@ -1,3 +1,6 @@
 venv
 .mypy_cache
 tmp.ipynb
+.vscode
+.env
+__pycache__/
