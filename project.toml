@@ -1,0 +1,19 @@
+[project]
+name = "LifeManager"
+version = "0.1.0"
+description = "A simple Python package"
+authors = [{name = "Raad", email = "alirezzaraadco@gmail.com"}]
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.2.5","pandas>=2.2.3"]
+license = {}
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/LifeManager"
+Documentation = "https://github.com/yourusername/LifeManager/README.md"
+Repository = "https://github.com/yourusername/LifeManager.git"
+Issues = "https://github.com/yourusername/LifeManager/issues"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
