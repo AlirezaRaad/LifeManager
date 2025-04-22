@@ -1,5 +1,5 @@
 [project]
-name = "LifeManager"
+name = "WorkManager"
 version = "0.1.0"
 description = "A simple Python package"
 authors = [{name = "Raad", email = "alirezzaraadco@gmail.com"}]
