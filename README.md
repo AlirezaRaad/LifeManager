@@ -1,4 +1,4 @@
-# What is WM(WorkManager)?
+# What is LM(LifeManager)?
 
 You can say I made this package for my life.
 

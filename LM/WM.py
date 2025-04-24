@@ -8,7 +8,7 @@ from psycopg2 import sql
 from psycopg2.errors import DuplicateDatabase
 
 
-class WorkManager:
+class LiferManager:
     def __init__(self):
         load_dotenv()
         self.MakePsqlDB()
