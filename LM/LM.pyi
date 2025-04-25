@@ -14,7 +14,7 @@ class LiferManager:
         """
         ...
 
-    def TaskTable(self, task_name: str, task_parent: str) -> bool:
+    def TaskTable(self, task_name: str, task_parent: str = None) -> bool:
         """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
             **NOTE: IT WILL MAKE A PARENT IF THERE IS NONE**
 

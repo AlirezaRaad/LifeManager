@@ -102,16 +102,16 @@ class LiferManager:
             cursor.close()
             conn.close()
 
-    def DailyTasksTable(self, task_name, task_parent) -> bool:
+    def DailyTasksTable(self, task_name, task_parent=None) -> bool:
 
         if not self._CreateDailyTasksTable():
             logger.critical(
                 f"In DailyTasksTable WHEN it was Calling _CreateDailyTasksTable Method.")
-            return False  # ? It means that if the above task fails, this method will fail as well
+            return False  # ? It means that if the table creation fails, this method will fail as well
 
         try:
             with self.__cursor() as cursor:
-                print("Ye Buddy")
+                cursor.execute()
 
             return True
 
@@ -124,7 +124,8 @@ class LiferManager:
 
         with self.__cursor() as cursor:
             try:
-                cursor.execute(f"CREATE TABLE DailyTasks;")
+                cursor.execute(
+                    f"CREATE TABLE DailyTasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER, FOREIGN KEY (parentTaskId) REFERENCES DailyTasks(id);")
                 return True
 
             except DuplicateTable:
