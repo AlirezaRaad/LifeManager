@@ -1,3 +1,5 @@
+import datetime as dt
+import logging
 import os
 from contextlib import contextmanager
 
@@ -9,9 +11,20 @@ from psycopg2 import sql
 from psycopg2.errors import DuplicateDatabase, DuplicateTable
 from psycopg2.pool import SimpleConnectionPool
 
+# * Make a every time this script runs.
+os.makedirs("log", exist_ok=True)
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+handler = logging.FileHandler(f"log/main.py_{dt.datetime.now()}.log")
+handler.setFormatter(logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
+
 
 class LiferManager:
     def __init__(self, minconn=1, maxconn=10):
+
         load_dotenv()
         self.__config = {"dbname": "workmanager",
                          "user": os.environ["PSQL_USER"],
@@ -40,6 +53,7 @@ class LiferManager:
 
         except Exception as e:
             conn.rollback()
+            logger.exception("In @contextmanager's Exception")
             raise e
 
         finally:
@@ -68,18 +82,20 @@ class LiferManager:
 
             # Create the new database
             cursor.execute(
-                sql.SQL("CREATE DATABASE {}").format(
-                    sql.Identifier("workmanager"))
+                sql.SQL("CREATE DATABASE workmanager;")
             )
 
-            print(f"Postgres Database initiated successfully!")
+            logger.info(f"Postgres Database initiated successfully!")
             return True
+
         except DuplicateDatabase:
-            print("Database is already initiated")
+
+            logger.info("Database is already initiated")
             return True
 
         except Exception as e:
-            print(f"An error has been occurred in database creation : {e}")
+            logger.exception(
+                f"In database creation")
             return False
 
         finally:
@@ -89,8 +105,8 @@ class LiferManager:
     def DailyTasksTable(self, task_name, task_parent) -> bool:
 
         if not self._CreateDailyTasksTable():
-            print(
-                f"There was an Error in DailyTasksTable WHEN it was Calling _CreateDailyTasksTable Method.")
+            logger.critical(
+                f"In DailyTasksTable WHEN it was Calling _CreateDailyTasksTable Method.")
             return False  # ? It means that if the above task fails, this method will fail as well
 
         try:
@@ -101,7 +117,7 @@ class LiferManager:
 
         except Exception as e:
 
-            print(f"There was an error in DailyTasksTable method -> {e}")
+            logger.exception(f"In DailyTasksTable method")
             return False
 
     def _CreateDailyTasksTable(self) -> bool:
@@ -110,10 +126,12 @@ class LiferManager:
             try:
                 cursor.execute(f"CREATE TABLE DailyTasks;")
                 return True
+
             except DuplicateTable:
                 return True
 
             except Exception as e:
-                print(
-                    f"There was an Error in _CreateDailyTasksTable Method: {e}")
+                logger.exception(
+                    f"In _CreateDailyTasksTable Method:")
+
                 return False
