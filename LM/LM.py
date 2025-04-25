@@ -6,7 +6,7 @@ import pandas as pd
 import psycopg2 as psql
 from dotenv import load_dotenv
 from psycopg2 import sql
-from psycopg2.errors import DuplicateDatabase
+from psycopg2.errors import DuplicateDatabase, DuplicateTable
 from psycopg2.pool import SimpleConnectionPool
 
 
@@ -86,7 +86,12 @@ class LiferManager:
             cursor.close()
             conn.close()
 
-    def TaskTable(self, task_name, task_parent) -> bool:
+    def DailyTasksTable(self, task_name, task_parent) -> bool:
+
+        if not self._CreateDailyTasksTable():
+            print(
+                f"There was an Error in DailyTasksTable WHEN it was Calling _CreateDailyTasksTable Method.")
+            return False  # ? It means that if the above task fails, this method will fail as well
 
         try:
             with self.__cursor() as cursor:
@@ -96,9 +101,19 @@ class LiferManager:
 
         except Exception as e:
 
-            print(f"There was an error in TaskTable method -> {e}")
+            print(f"There was an error in DailyTasksTable method -> {e}")
             return False
 
-    def _CreateTaskTable(self) -> bool:
+    def _CreateDailyTasksTable(self) -> bool:
 
-        return False
+        with self.__cursor() as cursor:
+            try:
+                cursor.execute(f"CREATE TABLE DailyTasks;")
+                return True
+            except DuplicateTable:
+                return True
+
+            except Exception as e:
+                print(
+                    f"There was an Error in _CreateDailyTasksTable Method: {e}")
+                return False
