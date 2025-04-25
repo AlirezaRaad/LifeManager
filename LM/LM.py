@@ -46,12 +46,8 @@ class LiferManager:
             cursor.close()
             self._connection_pool.putconn(conn)
 
-    def MakePsqlDB(self) -> bool:
-        """Make a PostgresSql database based on .env "PSQ_*" parameters
+    def MakePsqlDB(self):
 
-        Returns:
-            _type_: bool
-        """
         #! NOTE: I specifically DID NOT use connection pool for this one because I the dbname is set to postgres and
         #! this method is a kick start for the database creation and What pool should give to a db that it isn't created
         #! Yet! LOL
@@ -91,16 +87,6 @@ class LiferManager:
             conn.close()
 
     def TaskTable(self, task_name, task_parent) -> bool:
-        """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
-            **NOTE: IT WILL MAKE A PARENT IF THERE IS NONE**
-
-        Args:
-            task_name (str): This is the subtask.
-            task_parent (str): This is the main task. 
-
-        Returns:
-            bool: returns True if making task was successful
-        """
 
         try:
             with self.__cursor() as cursor:
@@ -114,9 +100,5 @@ class LiferManager:
             return False
 
     def _CreateTaskTable(self) -> bool:
-        """This Method makes Tasks Table in the database
 
-        Returns:
-            bool: True if it  successfully built it and False if it fails.
-        """
         return False
