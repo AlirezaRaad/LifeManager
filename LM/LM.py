@@ -11,12 +11,16 @@ from psycopg2.errors import DuplicateDatabase
 class LiferManager:
     def __init__(self):
         load_dotenv()
-        self._psql_dbname = "workmanager"
-        self._psql_user = os.environ["PSQL_USER"]
-        self._psql_password = os.environ["PSQL_PASSWORD"]
-        self._psql_host = os.environ["PSQL_HOST"]
-        self._psql_port = os.environ["PSQL_PORT"]
+        self.__config = {"psql_dbname": "workmanager",
+                         "psql_user": os.environ["PSQL_USER"],
+                         "psql_password": os.environ["PSQL_PASSWORD"],
+                         "psql_host": os.environ["PSQL_HOST"],
+                         "psql_port": os.environ["PSQL_PORT"]}
         self.MakePsqlDB()
+
+    @property
+    def config(self):
+        return self.__config
 
     def MakePsqlDB(self) -> bool:
         """Make a PostgresSql database based on .env "PSQ_*" parameters
@@ -26,10 +30,10 @@ class LiferManager:
         """
         conn_params = {
             "dbname": "postgres",  # Connect to the default 'postgres' database
-            "user": self._psql_user,
-            "password": self._psql_password,
-            "host": self._psql_host,
-            "port": self._psql_port,
+            "user": self.config["psql_user"],
+            "password": self.config["psql_password"],
+            "host": self.config["psql_host"],
+            "port": self.config["psql_port"],
         }
         try:
             # Connect to the PostgreSQL server
@@ -70,11 +74,11 @@ class LiferManager:
             bool: returns True if making task was successful
         """
         conn_params = {
-            "dbname": self._psql_dbname,
-            "user": self._psql_user,
-            "password": self._psql_password,
-            "host": self._psql_host,
-            "port": self._psql_port,
+            "dbname": self.config["psql_dbname"],
+            "user": self.config["psql_user"],
+            "password": self.config["psql_password"],
+            "host": self.config["psql_host"],
+            "port": self.config["psql_port"],
         }
         try:
             psql.connect(**conn_params)
