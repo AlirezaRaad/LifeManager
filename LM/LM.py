@@ -11,6 +11,11 @@ from psycopg2.errors import DuplicateDatabase
 class LiferManager:
     def __init__(self):
         load_dotenv()
+        self.psql_dbname = "workmanager"
+        self.psql_user = os.environ["PSQL_USER"]
+        self.psql_password = os.environ["PSQL_PASSWORD"]
+        self.psql_host = os.environ["PSQL_HOST"]
+        self.psql_port = os.environ["PSQL_PORT"]
         self.MakePsqlDB()
 
     def MakePsqlDB(self) -> bool:
@@ -21,10 +26,10 @@ class LiferManager:
         """
         conn_params = {
             "dbname": "postgres",  # Connect to the default 'postgres' database
-            "user": os.environ["PSQL_USER"],
-            "password": os.environ["PSQL_PASSWORD"],  # Set to your password if required
-            "host": os.environ["PSQL_HOST"],
-            "port": os.environ["PSQL_PORT"],
+            "user": self.psql_user,
+            "password": self.psql_password,
+            "host": self.psql_host,
+            "port": self.psql_port,
         }
         try:
             # Connect to the PostgreSQL server
@@ -35,7 +40,8 @@ class LiferManager:
 
             # Create the new database
             cursor.execute(
-                sql.SQL("CREATE DATABASE {}").format(sql.Identifier("workmanager"))
+                sql.SQL("CREATE DATABASE {}").format(
+                    sql.Identifier("workmanager"))
             )
 
             print(f"Postgres Database initiated successfully!")
@@ -51,3 +57,6 @@ class LiferManager:
         finally:
             cursor.close()
             conn.close()
+
+    def TaskTable(self):
+        pass
