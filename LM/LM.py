@@ -11,11 +11,11 @@ from psycopg2.errors import DuplicateDatabase
 class LiferManager:
     def __init__(self):
         load_dotenv()
-        self.psql_dbname = "workmanager"
-        self.psql_user = os.environ["PSQL_USER"]
-        self.psql_password = os.environ["PSQL_PASSWORD"]
-        self.psql_host = os.environ["PSQL_HOST"]
-        self.psql_port = os.environ["PSQL_PORT"]
+        self._psql_dbname = "workmanager"
+        self._psql_user = os.environ["PSQL_USER"]
+        self._psql_password = os.environ["PSQL_PASSWORD"]
+        self._psql_host = os.environ["PSQL_HOST"]
+        self._psql_port = os.environ["PSQL_PORT"]
         self.MakePsqlDB()
 
     def MakePsqlDB(self) -> bool:
@@ -26,10 +26,10 @@ class LiferManager:
         """
         conn_params = {
             "dbname": "postgres",  # Connect to the default 'postgres' database
-            "user": self.psql_user,
-            "password": self.psql_password,
-            "host": self.psql_host,
-            "port": self.psql_port,
+            "user": self._psql_user,
+            "password": self._psql_password,
+            "host": self._psql_host,
+            "port": self._psql_port,
         }
         try:
             # Connect to the PostgreSQL server
@@ -58,5 +58,27 @@ class LiferManager:
             cursor.close()
             conn.close()
 
-    def TaskTable(self):
-        pass
+    def TaskTable(self, task_name, task_parent) -> bool:
+        """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
+            **NOTE: IT WILL MAKE A PARENT IF THERE IS NONE**
+
+        Args:
+            task_name (str): This is the subtask.
+            task_parent (str): This is the main task. 
+
+        Returns:
+            bool: returns True if making task was successful
+        """
+        conn_params = {
+            "dbname": self._psql_dbname,
+            "user": self._psql_user,
+            "password": self._psql_password,
+            "host": self._psql_host,
+            "port": self._psql_port,
+        }
+        try:
+            psql.connect(**conn_params)
+            return True
+        except Exception as e:
+            print(f"There was an error in TaskTable method -> {e}")
+            return False
