@@ -11,12 +11,15 @@ from psycopg2 import sql
 from psycopg2.errors import DuplicateDatabase, DuplicateTable
 from psycopg2.pool import SimpleConnectionPool
 
+# TODO: Make logger in every corner of the program for better understanding.
+
 # * Make a every time this script runs.
 os.makedirs("log", exist_ok=True)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler(f"log/main.py_{dt.datetime.now()}.log")
+handler = logging.FileHandler(
+    f"log/main.py_{dt.datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}.log")
 handler.setFormatter(logging.Formatter(
     "%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
@@ -111,8 +114,7 @@ class LiferManager:
 
         try:
             with self.__cursor() as cursor:
-                cursor.execute()
-
+                pass
             return True
 
         except Exception as e:
@@ -125,7 +127,7 @@ class LiferManager:
         with self.__cursor() as cursor:
             try:
                 cursor.execute(
-                    f"CREATE TABLE DailyTasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER, FOREIGN KEY (parentTaskId) REFERENCES DailyTasks(id);")
+                    f"CREATE TABLE DailyTasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER, FOREIGN KEY (parentTaskId) REFERENCES DailyTasks(id));")
                 return True
 
             except DuplicateTable:
