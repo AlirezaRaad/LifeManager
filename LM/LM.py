@@ -107,7 +107,7 @@ class LiferManager:
             cursor.close()
             conn.close()
 
-    def DailyTasksTable(self, task_name: str, *, ref_to=None) -> bool:
+    def DailyTasksTableAdder(self, task_name: str, *, ref_to=None) -> bool:
 
         # GOAL: I wonder to raise UniqueViolation or just return False.
         if ref_to:
@@ -117,7 +117,7 @@ class LiferManager:
 
         if not self._CreateDailyTasksTable():
             logger.critical(
-                f"In DailyTasksTable WHEN it was Calling _CreateDailyTasksTable Method.")
+                f"In DailyTasksTableAdder WHEN it was Calling _CreateDailyTasksTable Method.")
             return False  # ? It means that if the table creation fails, this method will fail as well
 
         # GOAL: If The referrer is None; Then if the task_name is not already a PARENT, It will make a parent row.
@@ -144,11 +144,11 @@ class LiferManager:
             return True
 
         except UniqueViolation:
-            logger.exception(f"In DailyTasksTable method, A dupe Key: ")
+            logger.exception(f"In DailyTasksTableAdder method, A dupe Key: ")
             return True
         except Exception as e:
 
-            logger.exception(f"In DailyTasksTable method")
+            logger.exception(f"In DailyTasksTableAdder method")
             return False
 
     def _CreateDailyTasksTable(self) -> bool:
