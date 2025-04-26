@@ -27,6 +27,7 @@ logger.addHandler(handler)
 
 
 class LiferManager:
+
     def __init__(self, minconn=1, maxconn=10):
 
         load_dotenv()
@@ -106,26 +107,44 @@ class LiferManager:
             cursor.close()
             conn.close()
 
-    def DailyTasksTable(self, task_name=None, *, ref_to=None) -> bool:
+    def DailyTasksTable(self, task_name: str, *, ref_to=None) -> bool:
+
+        # GOAL: I wonder to raise UniqueViolation or just return False.
+        if ref_to:
+            if task_name not in self.__AllParentTasks():
+                return False
+        # CONCLUSION: If I use UniqueViolation, it might be caught in other try..catch and we have a runtime bug...
 
         if not self._CreateDailyTasksTable():
             logger.critical(
                 f"In DailyTasksTable WHEN it was Calling _CreateDailyTasksTable Method.")
             return False  # ? It means that if the table creation fails, this method will fail as well
 
+        # GOAL: If The referrer is None; Then if the task_name is not already a PARENT, It will make a parent row.
+        if ref_to is None:
+            if task_name not in self.__AllParentTasks():
+                with self.__cursor() as cursor:
+                    cursor.execute(
+                        "INSERT INTO dailytasks (taskname) VALUES (%s)", (task_name,))
+                    logger.info(f"Parent row {task_name} added successfully!")
+                    return True
+
         try:
             with self.__cursor() as cursor:
-                # ! I Specially write it this way to prevent sql injection
 
-                query = sql.SQL("INSERT INTO {table} (taskName, parentTaskId) VALUES (%s, %s)").format(
-                    table=sql.Identifier("dailytasks")
-                )
-                cursor.execute(query, (task_name, ref_to))
+                # GOAL: This will fetch the PARENT id from db from the dailytasks.
+                cursor.execute(
+                    "SELECT id FROM dailytasks WHERE taskname = %s", (ref_to,))
+                parent_id = cursor.fetchone()[0]
+
+                # GOAL: This will add the sub task to the TABLE.
+                cursor.execute(
+                    "INSERT INTO dailytasks (taskName, parentTaskId) VALUES (%s, %s)", (task_name, parent_id))
 
             return True
 
         except UniqueViolation:
-            logger.exception("Here")
+            logger.exception(f"In DailyTasksTable method, A dupe Key: ")
             return True
         except Exception as e:
 
@@ -134,33 +153,38 @@ class LiferManager:
 
     def _CreateDailyTasksTable(self) -> bool:
 
-        try:
-            with self.__cursor() as cursor:
-
-                # POINT: This Created The Table with Unique Constrain on both columns but not (taskName,NULL)
+        with self.__cursor() as cursor:
+            try:
+                # GOAL: This Created The Table with Unique Constrain on both columns but not (taskName,NULL)
                 cursor.execute(
                     """CREATE TABLE dailytasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER,
-                        CONSTRAINT FK_self_parent_name FOREIGN KEY (parentTaskId) REFERENCES dailytasks(id),
-                        CONSTRAINT unique_rows UNIQUE(taskName, parentTaskId));""")
+                            CONSTRAINT FK_self_parent_name FOREIGN KEY (parentTaskId) REFERENCES dailytasks(id),
+                            CONSTRAINT unique_rows UNIQUE(taskName, parentTaskId));""")
 
-                # POINT: Now I manually made (taskName,NULL) a UNIQUE.
+                # GOAL: Now I manually made (taskName,NULL) a UNIQUE.
                 cursor.execute(
                     """CREATE UNIQUE INDEX unique_null_parent_task ON dailytasks(taskName) WHERE parentTaskId IS NULL;""")
 
-            return True
+                return True
 
-        except DuplicateTable:
-            return True
+            except DuplicateTable:
+                return True
 
-        except Exception as e:
-            logger.exception(
-                f"In _CreateDailyTasksTable Method:")
+            except UniqueViolation:
+                logger.exception(
+                    f"In _CreateDailyTasksTable Method You have Duplicate Key: ")
+                return True
+            except Exception as e:
+                logger.exception(
+                    f"In _CreateDailyTasksTable Method:")
 
-            return False
+                return False
 
-    def AllParentTasks(self):
+    def __AllParentTasks(self):
         with self.__cursor() as cursor:
             cursor.execute(
                 "SELECT * from dailytasks WHERE parentTaskId IS NULL")
+            return [i[1] for i in cursor.fetchall()]
 
-            return eval(f"Literal{[i[1] for i in cursor.fetchall()]}")
+    def MakeWeeklyTables(self):
+        pass

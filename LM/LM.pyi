@@ -9,6 +9,10 @@ class LiferManager:
     def config(self) -> dict:
         ...
 
+    def __cursor(self):
+        """"Makes A cursor pool and a yields cursor from the pool."""
+        ...
+
     def MakePsqlDB(self) -> bool:
         """Make a PostgresSql database based on .env "PSQ_*" parameters
 
@@ -42,10 +46,13 @@ class LiferManager:
             bool: True if it  successfully built it and False if it fails.
         """
 
-    def AllParentTasks(self) -> Literal:
+    def __AllParentTasks(self) -> list:
         """This Method Will return a Literal object containing every PARENT in the dailytask TABLE.
 
         Returns:
-            Literal: A Literal Obj.
+            list: A list Obj.
         """
+        ...
+
+    def MakeWeeklyTables(self):
         ...
