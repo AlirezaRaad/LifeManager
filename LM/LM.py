@@ -105,7 +105,7 @@ class LiferManager:
             cursor.close()
             conn.close()
 
-    def DailyTasksTable(self, task_name, task_parent=None) -> bool:
+    def DailyTasksTable(self, task_name=None, *, ref_to=None) -> bool:
 
         if not self._CreateDailyTasksTable():
             logger.critical(
@@ -114,7 +114,13 @@ class LiferManager:
 
         try:
             with self.__cursor() as cursor:
-                pass
+                # ! I Specially write it this way to prevent sql injection
+
+                query = sql.SQL("INSERT INTO {table} (taskName, parentTaskId) VALUES (%s, %s)").format(
+                    table=sql.Identifier("dailytasks")
+                )
+                cursor.execute(query, (task_name, ref_to))
+
             return True
 
         except Exception as e:
@@ -124,17 +130,26 @@ class LiferManager:
 
     def _CreateDailyTasksTable(self) -> bool:
 
-        with self.__cursor() as cursor:
-            try:
+        try:
+            with self.__cursor() as cursor:
+
+                # POINT: This Created The Table with Unique Constrain on both columns but not (taskName,NULL)
                 cursor.execute(
-                    f"CREATE TABLE DailyTasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER, FOREIGN KEY (parentTaskId) REFERENCES DailyTasks(id));")
-                return True
+                    """CREATE TABLE dailytasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER,
+                        CONSTRAINT FK_self_parent_name FOREIGN KEY (parentTaskId) REFERENCES dailytasks(id),
+                        CONSTRAINT unique_rows UNIQUE(taskName, parentTaskId));""")
 
-            except DuplicateTable:
-                return True
+                # POINT: Now I manually made (taskName,NULL) a UNIQUE.
+                cursor.execute(
+                    """CREATE UNIQUE INDEX unique_null_parent_task ON x(taskName) WHERE parentTaskId IS NULL;""")
 
-            except Exception as e:
-                logger.exception(
-                    f"In _CreateDailyTasksTable Method:")
+            return True
 
-                return False
+        except DuplicateTable:
+            return True
+
+        except Exception as e:
+            logger.exception(
+                f"In _CreateDailyTasksTable Method:")
+
+            return False

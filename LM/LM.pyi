@@ -14,13 +14,18 @@ class LiferManager:
         """
         ...
 
-    def TaskTable(self, task_name: str, task_parent: str = None) -> bool:
+    def DailyTasksTable(self, task_name: str = None, ref_to: str = None) -> bool:
         """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
-            **NOTE: IT WILL MAKE A PARENT IF THERE IS NONE**
+            **NOTE: IT WILL MAKE A PARENT IF ref_to=None**
 
         Args:
-            task_name (str): This is the subtask.
-            task_parent (str): This is the main task. 
+            task_name (str): This is the subtask.(could be main if task_parent is None)
+            ref_to (str): This is the task that you would refer to.
+
+        Example:
+            DailyTasksTable(task_name= 'Learning') -> This make a parent 'Learning' that others can refer to.
+
+            DailyTasksTable(task_name= 'Udemy', ref_to='Learning') -> this makes 'Udemy' child of 'Learning'
 
         Returns:
             bool: returns True if making task was successful
