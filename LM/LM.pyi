@@ -1,3 +1,6 @@
+from typing import Literal
+
+
 class LiferManager:
     def __init__(self, minconn: int, maxconn: int):
         ...
@@ -32,9 +35,17 @@ class LiferManager:
         """
         ...
 
-    def _CreateTaskTable(self) -> bool:
+    def _CreateDailyTasksTable(self) -> bool:
         """This Method makes Tasks Table in the database
 
         Returns:
             bool: True if it  successfully built it and False if it fails.
         """
+
+    def AllParentTasks(self) -> Literal:
+        """This Method Will return a Literal object containing every PARENT in the dailytask TABLE.
+
+        Returns:
+            Literal: A Literal Obj.
+        """
+        ...

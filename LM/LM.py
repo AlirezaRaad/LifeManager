@@ -2,13 +2,14 @@ import datetime as dt
 import logging
 import os
 from contextlib import contextmanager
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 import psycopg2 as psql
 from dotenv import load_dotenv
 from psycopg2 import sql
-from psycopg2.errors import DuplicateDatabase, DuplicateTable
+from psycopg2.errors import DuplicateDatabase, DuplicateTable, UniqueViolation
 from psycopg2.pool import SimpleConnectionPool
 
 # TODO: Make logger in every corner of the program for better understanding.
@@ -123,6 +124,9 @@ class LiferManager:
 
             return True
 
+        except UniqueViolation:
+            logger.exception("Here")
+            return True
         except Exception as e:
 
             logger.exception(f"In DailyTasksTable method")
@@ -141,7 +145,7 @@ class LiferManager:
 
                 # POINT: Now I manually made (taskName,NULL) a UNIQUE.
                 cursor.execute(
-                    """CREATE UNIQUE INDEX unique_null_parent_task ON x(taskName) WHERE parentTaskId IS NULL;""")
+                    """CREATE UNIQUE INDEX unique_null_parent_task ON dailytasks(taskName) WHERE parentTaskId IS NULL;""")
 
             return True
 
@@ -153,3 +157,10 @@ class LiferManager:
                 f"In _CreateDailyTasksTable Method:")
 
             return False
+
+    def AllParentTasks(self):
+        with self.__cursor() as cursor:
+            cursor.execute(
+                "SELECT * from dailytasks WHERE parentTaskId IS NULL")
+
+            return eval(f"Literal{[i[1] for i in cursor.fetchall()]}")
