@@ -109,11 +109,11 @@ class LiferManager:
 
     def DailyTasksTableAdder(self, task_name: str, *, ref_to=None) -> bool:
 
-        # GOAL: I wonder to raise UniqueViolation or just return False.
         if ref_to:
-            if task_name not in self.__AllParentTasks():
+            if ref_to not in self.__AllParentTasks():
+                logger.info("Parent row does not exists!")
                 return False
-        # CONCLUSION: If I use UniqueViolation, it might be caught in other try..catch and we have a runtime bug...
+        # CONCLUSION: It returns False and DOES NOW Create a new row BECAUSE maybe the user misspelled it and if I add a new parent row if there is not one, it may make new parent row although it was not the intention of the use.
 
         if not self._CreateDailyTasksTable():
             logger.critical(

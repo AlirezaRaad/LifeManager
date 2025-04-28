@@ -24,6 +24,7 @@ class LiferManager:
     def DailyTasksTable(self, task_name: str = None, ref_to: str = None) -> bool:
         """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
             **NOTE: IT WILL MAKE A PARENT IF ref_to=None**
+            **NOTE: It will return False If you entered a ref_to that does not exist. First You need to add it manually.**
 
         Args:
             task_name (str): This is the subtask.(could be main if task_parent is None)
