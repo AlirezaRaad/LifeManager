@@ -9,7 +9,13 @@ import pandas as pd
 import psycopg2 as psql
 from dotenv import load_dotenv
 from psycopg2 import sql
-from psycopg2.errors import DuplicateDatabase, DuplicateTable, UniqueViolation
+from psycopg2.errors import (
+    DuplicateDatabase,
+    DuplicateTable,
+    ForeignKeyViolation,
+    InvalidTextRepresentation,
+    UniqueViolation,
+)
 from psycopg2.pool import SimpleConnectionPool
 
 # TODO: Make logger in every corner of the program for better understanding.
@@ -46,6 +52,8 @@ class LiferManager:
         self._connection_pool = SimpleConnectionPool(
             minconn=minconn, maxconn=maxconn, **self.__config
         )
+
+        self.current_week_name = None
 
     @property
     def config(self):
@@ -194,6 +202,8 @@ class LiferManager:
         date = dt.datetime.now().isocalendar()
         year, week = date.year, date.week
 
+        self.current_week_name = f"y{year}w{week}"
+
         table_name = f"y{year}w{week}"
 
         with self.__cursor() as cursor:
@@ -245,3 +255,35 @@ class LiferManager:
         except:
             logger.exception("In ShowAllTables Method: ")
             return False
+
+    def InsertIntoWeeklyTable(
+        self, duration: float, task_id: int, description: str = None
+    ) -> bool:
+
+        self.MakeWeeklyTables()
+        logger.info("Used MakeWeeklyTables Method in InsertIntoWeeklyTable")
+
+        with self.__cursor() as cursor:
+            s_i = sql.Literal
+
+            try:
+                query = sql.SQL(
+                    "INSERT INTO {} (duration, taskid, description) VALUES ({},{},{})"
+                ).format(
+                    sql.Identifier(self.current_week_name),
+                    s_i(f"{duration}"),
+                    s_i(f"{task_id}"),
+                    s_i(description),
+                )
+                cursor.execute(query)
+                return True
+            except ForeignKeyViolation:
+                logger.exception("InsertIntoWeeklyTable Violated a FK CONSTRAINT: ")
+                return False
+            except InvalidTextRepresentation:
+                logger.exception("Entered TEXT instead of int for duration/task_id")
+                return False
+
+            except Exception:
+                logger.exception("An Uncached Exception Has Happened:")
+                return False

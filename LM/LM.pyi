@@ -77,3 +77,7 @@ class LiferManager:
             table_type (str, optional):  Defaults to "BASE TABLE".
         """
         ...
+
+    def InsertIntoWeeklyTable(
+        self, duration: float, task_id: int, description: str = None
+    ) -> bool: ...
