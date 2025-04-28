@@ -20,10 +20,12 @@ os.makedirs("log", exist_ok=True)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler(
-    f"log/main.py_{dt.datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}.log")
-handler.setFormatter(logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(message)s"))
+    f"log/main.py_{dt.datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}.log"
+)
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
+
+# TODO: at the end, make a single method to all the tables in a single go. it would be beneficial, I think?
 
 
 class LiferManager:
@@ -31,16 +33,19 @@ class LiferManager:
     def __init__(self, minconn=1, maxconn=10):
 
         load_dotenv()
-        self.__config = {"dbname": "workmanager",
-                         "user": os.environ["PSQL_USER"],
-                         "password": os.environ["PSQL_PASSWORD"],
-                         "host": os.environ["PSQL_HOST"],
-                         "port": os.environ["PSQL_PORT"]}
+        self.__config = {
+            "dbname": "workmanager",
+            "user": os.environ["PSQL_USER"],
+            "password": os.environ["PSQL_PASSWORD"],
+            "host": os.environ["PSQL_HOST"],
+            "port": os.environ["PSQL_PORT"],
+        }
 
         self.MakePsqlDB()
 
         self._connection_pool = SimpleConnectionPool(
-            minconn=minconn, maxconn=maxconn, **self.__config)
+            minconn=minconn, maxconn=maxconn, **self.__config
+        )
 
     @property
     def config(self):
@@ -86,9 +91,7 @@ class LiferManager:
             cursor = conn.cursor()
 
             # Create the new database
-            cursor.execute(
-                sql.SQL("CREATE DATABASE workmanager;")
-            )
+            cursor.execute(sql.SQL("CREATE DATABASE workmanager;"))
 
             logger.info(f"Postgres Database initiated successfully!")
             return True
@@ -99,8 +102,7 @@ class LiferManager:
             return True
 
         except Exception as e:
-            logger.exception(
-                f"In database creation")
+            logger.exception(f"In database creation")
             return False
 
         finally:
@@ -109,15 +111,10 @@ class LiferManager:
 
     def DailyTasksTableAdder(self, task_name: str, *, ref_to=None) -> bool:
 
-        if ref_to:
-            if ref_to not in self.__AllParentTasks():
-                logger.info("Parent row does not exists!")
-                return False
-        # CONCLUSION: It returns False and DOES NOW Create a new row BECAUSE maybe the user misspelled it and if I add a new parent row if there is not one, it may make new parent row although it was not the intention of the use.
-
         if not self._CreateDailyTasksTable():
             logger.critical(
-                f"In DailyTasksTableAdder WHEN it was Calling _CreateDailyTasksTable Method.")
+                f"In DailyTasksTableAdder WHEN it was Calling _CreateDailyTasksTable Method."
+            )
             return False  # ? It means that if the table creation fails, this method will fail as well
 
         # GOAL: If The referrer is None; Then if the task_name is not already a PARENT, It will make a parent row.
@@ -125,7 +122,8 @@ class LiferManager:
             if task_name not in self.__AllParentTasks():
                 with self.__cursor() as cursor:
                     cursor.execute(
-                        "INSERT INTO dailytasks (taskname) VALUES (%s)", (task_name,))
+                        "INSERT INTO dailytasks (taskname) VALUES (%s)", (task_name,)
+                    )
                     logger.info(f"Parent row {task_name} added successfully!")
                     return True
 
@@ -134,16 +132,21 @@ class LiferManager:
 
                 # GOAL: This will fetch the PARENT id from db from the dailytasks.
                 cursor.execute(
-                    "SELECT id FROM dailytasks WHERE taskname = %s", (ref_to,))
+                    "SELECT id FROM dailytasks WHERE taskname = %s", (ref_to,)
+                )
                 parent_id = cursor.fetchone()[0]
 
                 # GOAL: This will add the sub task to the TABLE.
                 cursor.execute(
-                    "INSERT INTO dailytasks (taskName, parentTaskId) VALUES (%s, %s)", (task_name, parent_id))
+                    "INSERT INTO dailytasks (taskName, parentTaskId) VALUES (%s, %s)",
+                    (task_name, parent_id),
+                )
 
             return True
 
         except UniqueViolation:
+            # CONCLUSION: Although Normally if would raise an error because od UNIQUE CONSTRAINT that I put, but here is will
+            # CONCLUSION: return true because if this UniqueViolation occurs. it mean the user row is already in db and does not need to return False.
             logger.exception(f"In DailyTasksTableAdder method, A dupe Key: ")
             return True
         except Exception as e:
@@ -159,11 +162,13 @@ class LiferManager:
                 cursor.execute(
                     """CREATE TABLE dailytasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER,
                             CONSTRAINT FK_self_parent_name FOREIGN KEY (parentTaskId) REFERENCES dailytasks(id),
-                            CONSTRAINT unique_rows UNIQUE(taskName, parentTaskId));""")
+                            CONSTRAINT unique_rows UNIQUE(taskName, parentTaskId));"""
+                )
 
                 # GOAL: Now I manually made (taskName,NULL) a UNIQUE.
                 cursor.execute(
-                    """CREATE UNIQUE INDEX unique_null_parent_task ON dailytasks(taskName) WHERE parentTaskId IS NULL;""")
+                    """CREATE UNIQUE INDEX unique_null_parent_task ON dailytasks(taskName) WHERE parentTaskId IS NULL;"""
+                )
 
                 return True
 
@@ -172,19 +177,71 @@ class LiferManager:
 
             except UniqueViolation:
                 logger.exception(
-                    f"In _CreateDailyTasksTable Method You have Duplicate Key: ")
+                    f"In _CreateDailyTasksTable Method You have Duplicate Key: "
+                )
                 return True
             except Exception as e:
-                logger.exception(
-                    f"In _CreateDailyTasksTable Method:")
+                logger.exception(f"In _CreateDailyTasksTable Method:")
 
                 return False
 
     def __AllParentTasks(self):
         with self.__cursor() as cursor:
-            cursor.execute(
-                "SELECT * from dailytasks WHERE parentTaskId IS NULL")
+            cursor.execute("SELECT * from dailytasks WHERE parentTaskId IS NULL")
             return [i[1] for i in cursor.fetchall()]
 
     def MakeWeeklyTables(self):
-        pass
+        date = dt.datetime.now().isocalendar()
+        year, week = date.year, date.week
+
+        table_name = f"y{year}w{week}"
+
+        with self.__cursor() as cursor:
+            try:
+                query = sql.SQL(
+                    """CREATE TABLE IF NOT EXISTS {table} (
+                                id SERIAL PRIMARY KEY, 
+                                duration INT NOT NULL, 
+                                taskID INT NOT NULL , 
+                                description TEXT,
+                                CONSTRAINT {const} FOREIGN KEY (taskID) REFERENCES dailytasks(id)
+                                )
+                                """
+                ).format(
+                    table=sql.Identifier(table_name),
+                    const=sql.Identifier(f"FK_{table_name}_taskid"),
+                )
+
+                cursor.execute(query)
+                logger.info(f"TABLE {table_name} has created successfully.")
+                return True
+
+            except:
+                logger.exception(f"An Error occurred while making {table_name} TABLE: ")
+                return False
+
+    def ShowAllTables(
+        self, table_schema: str = "public", table_type: str = "BASE TABLE"
+    ) -> str | bool:
+
+        try:
+            with self.__cursor() as cursor:
+                query = sql.SQL(
+                    """
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_schema = {schema} 
+                    AND table_type = {ttype}
+                    ORDER BY table_name
+                """
+                ).format(
+                    schema=sql.Literal(table_schema), ttype=sql.Literal(table_type)
+                )
+
+                cursor.execute(query)
+                tables = cursor.fetchall()
+
+            return "\n".join(f"{i}. {j[0]}" for i, j in enumerate(tables, start=1))
+
+        except:
+            logger.exception("In ShowAllTables Method: ")
+            return False

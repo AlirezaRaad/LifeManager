@@ -1,16 +1,11 @@
 from typing import Literal
 
-
 class LiferManager:
-    def __init__(self, minconn: int, maxconn: int):
-        ...
-
+    def __init__(self, minconn: int, maxconn: int): ...
     @property
-    def config(self) -> dict:
-        ...
-
+    def config(self) -> dict: ...
     def __cursor(self):
-        """"Makes A cursor pool and a yields cursor from the pool."""
+        """ "Makes A cursor pool and a yields cursor from the pool."""
         ...
 
     def MakePsqlDB(self) -> bool:
@@ -55,5 +50,30 @@ class LiferManager:
         """
         ...
 
-    def MakeWeeklyTables(self):
+    def MakeWeeklyTables(self) -> bool:
+        """
+        Makes a Table with the current year & week name is it.
+
+        Assume we are in the week 16 of 2025, it makes a y2025w16 table.
+
+
+        Returns:
+            bool: True if it successfully make the table and False otherwise.
+        """
+        ...
+
+    def ShowAllTables(
+        self,
+        table_schema: str = "public",
+        table_type: Literal[
+            "BASE TABLE", "VIEW", "FOREIGN TABLE", "LOCAL TEMPORARY"
+        ] = "BASE TABLE",
+    ) -> str | bool:
+        """
+        Returns a str containing all of the tables using the provided schema and TABLE type.
+
+        Args:
+            table_schema (str, optional): Defaults to "public".
+            table_type (str, optional):  Defaults to "BASE TABLE".
+        """
         ...
