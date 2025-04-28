@@ -1,9 +1,11 @@
+from contextlib import contextmanager
 from typing import Literal
 
 class LiferManager:
-    def __init__(self, minconn: int, maxconn: int): ...
+    def __init__(self, minconn: int = 1, maxconn: int = 10): ...
     @property
     def config(self) -> dict: ...
+    @contextmanager
     def __cursor(self):
         """ "Makes A cursor pool and a yields cursor from the pool."""
         ...
@@ -16,7 +18,7 @@ class LiferManager:
         """
         ...
 
-    def DailyTasksTable(self, task_name: str = None, ref_to: str = None) -> bool:
+    def DailyTasksTableAdder(self, task_name: str, *, ref_to=None) -> bool:
         """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
             **NOTE: IT WILL MAKE A PARENT IF ref_to=None**
             **NOTE: It will return False If you entered a ref_to that does not exist. First You need to add it manually.**
@@ -80,4 +82,14 @@ class LiferManager:
 
     def InsertIntoWeeklyTable(
         self, duration: float, task_id: int, description: str = None
-    ) -> bool: ...
+    ) -> bool:
+        """Insert into current week TABLE with provided variables.
+
+        Args:
+            duration (float): The duration in **MINUTE**.
+            task_id (int): The ID of your task which you want to add the time(duration) to.
+            description (str, optional): A brief description. Defaults to None.
+
+        Returns:
+            bool: **True** if Inserting was successful else **False**.
+        """
