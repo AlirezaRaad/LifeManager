@@ -20,7 +20,7 @@ os.makedirs("log", exist_ok=True)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 handler = logging.FileHandler(
-    f"log/main.py_{dt.datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}.log"
+    f"log/{dt.datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}.log"
 )
 handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
