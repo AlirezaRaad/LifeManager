@@ -276,6 +276,9 @@ class LiferManager:
                     s_i(description),
                 )
                 cursor.execute(query)
+                logger.info(
+                    f"Inserted {duration} {task_id} {description} to the {self.current_week_name} TABLE."
+                )
                 return True
             except ForeignKeyViolation:
                 logger.exception("InsertIntoWeeklyTable Violated a FK CONSTRAINT: ")
@@ -287,3 +290,27 @@ class LiferManager:
             except Exception:
                 logger.exception("An Uncached Exception Has Happened:")
                 return False
+
+    def time_timer(
+        self,
+        t1: dt.datetime,
+        t2: dt.datetime,
+    ) -> float:
+
+        # GOAL: raise custom Value Error for t1,t2 if their not a datetime object.
+        if not isinstance(t1, dt.datetime):
+            raise TypeError(f"t1 type({type(t1)}) is not an datetime object.")
+        if not isinstance(t1, dt.datetime):
+            raise TypeError(f"t2 type({type(t2)}) is not an datetime object.")
+
+        try:
+            return abs((t2 - t1).total_seconds())
+        except Exception:
+            logger.exception("In time_timer method: ")
+            return False
+
+    def start_timer(self):
+        pass
+
+    def end_timer(self):
+        pass

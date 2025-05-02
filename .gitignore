@@ -1,4 +1,4 @@
-vvenv
+.venv
 .mypy_cache
 tmp.ipynb
 .vscode
