@@ -45,22 +45,22 @@ class CTimer:
             float | bool: Return the seconds in float; Or returns False if any exceptions happens; check logs.
         """
         try:
-            if not self.start:
+            if not self.__start:
                 raise ValueError("Object does now have any start attribute.")
-            if not self.end:
+            if not self.__end:
                 raise ValueError("Object does now have any end attribute.")
 
-            return abs((self.start - self.end).total_seconds())
+            return abs((self.__start - self.__end).total_seconds())
         except Exception:
             logger.exception("In time_it method: ")
             return False
 
     def start_it(self) -> None:
         """Makes a new datetime.datetime.now object and sets it to the start attribute"""
-        self.start = dt.datetime.now()
+        self.__start = dt.datetime.now()
 
     def end_it(self) -> None:
         """Makes a new datetime.datetime.now object and sets it to the start attribute"""
-        if not self.start:
+        if not self.__start:
             raise ValueError("First Initiate the start using **start_it** method")
-        self.end = dt.datetime.now()
+        self.__end = dt.datetime.now()

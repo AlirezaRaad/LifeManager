@@ -285,7 +285,8 @@ class LifeManager:
                 return False
 
     def timer(self) -> UUID | bool:
-        """Makes a CTimer object.
+        """Makes a CTimer object. Use the uid that it returns to access the CTimer object using CTimer.get_instance() and then use the instance methods.
+
 
         Returns:
             UUID | bool: Returns the made CTimer uid, otherwise False
