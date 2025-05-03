@@ -1,4 +1,5 @@
 .venv
+backup
 .mypy_cache
 tmp.ipynb
 .vscode

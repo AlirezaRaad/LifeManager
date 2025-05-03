@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import os
+import subprocess
 from contextlib import contextmanager
 from typing import Literal
 from uuid import UUID
@@ -34,10 +35,10 @@ class LifeManager:
         load_dotenv()
         self.__config = {
             "dbname": "workmanager",
-            "user": os.environ["PSQL_USER"],
-            "password": os.environ["PSQL_PASSWORD"],
-            "host": os.environ["PSQL_HOST"],
-            "port": os.environ["PSQL_PORT"],
+            "user": os.environ["PGUSER"],
+            "password": os.environ["PGPASSWORD"],
+            "host": os.environ["PGHOST"],
+            "port": os.environ["PGPORT"],
         }
 
         self.MakePsqlDB()
@@ -298,3 +299,24 @@ class LifeManager:
         except Exception:
             logger.exception("In Making a CTimer Object in LM.timer Method.")
             return False
+
+    def backup(self):
+
+        os.makedirs("backup", exist_ok=True)
+        timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = f"backup/workmanager_backup_{timestamp}.backup"
+
+        command = [
+            "pg_dump",
+            "-F",
+            "c",
+            "-f",
+            output_path,
+            "workmanager",
+        ]
+
+        try:
+            subprocess.run(command, check=True)
+            logger.info(f"✅ Backup successful: {output_path}")
+        except subprocess.CalledProcessError as e:
+            logger.info(f"❌ Backup failed: {e}")

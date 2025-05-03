@@ -1,6 +1,7 @@
 import datetime as dt
 from contextlib import contextmanager
 from typing import Literal
+from uuid import UUID
 
 class LifeManager:
     def __init__(self, minconn: int = 1, maxconn: int = 10): ...
@@ -94,3 +95,12 @@ class LifeManager:
         Returns:
             bool: **True** if Inserting was successful else **False**.
         """
+
+    def timer(self) -> UUID | bool:
+        """Makes a CTimer object. Use the uid that it returns to access the CTimer object using CTimer.get_instance() and then use the instance methods.
+
+
+        Returns:
+            UUID | bool: Returns the made CTimer uid, otherwise False
+        """
+        ...
