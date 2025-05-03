@@ -318,5 +318,6 @@ class LifeManager:
         try:
             subprocess.run(command, check=True)
             logger.info(f"✅ Backup successful: {output_path}")
+
         except subprocess.CalledProcessError as e:
             logger.info(f"❌ Backup failed: {e}")
