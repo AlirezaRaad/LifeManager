@@ -12,7 +12,7 @@ import datetime as dt
 import uuid
 from typing import ClassVar, Dict
 
-from logger_config import logger
+from .logger_config import logger
 
 
 class CTimer:

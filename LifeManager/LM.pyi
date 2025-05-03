@@ -2,7 +2,7 @@ import datetime as dt
 from contextlib import contextmanager
 from typing import Literal
 
-class LiferManager:
+class LifeManager:
     def __init__(self, minconn: int = 1, maxconn: int = 10): ...
     @property
     def config(self) -> dict: ...

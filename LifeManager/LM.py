@@ -3,6 +3,7 @@ import logging
 import os
 from contextlib import contextmanager
 from typing import Literal
+from uuid import UUID
 
 import numpy as np
 import pandas as pd
@@ -18,16 +19,15 @@ from psycopg2.errors import (
 )
 from psycopg2.pool import SimpleConnectionPool
 
+from .custom_timer import CTimer
+
 # * Make a every time this script runs.
-from logger_config import logger
-
-# TODO: Make logger in every corner of the program for better understanding.
-
+from .logger_config import logger
 
 # TODO: at the end, make a single method to all the tables in a single go. it would be beneficial, I think?
 
 
-class LiferManager:
+class LifeManager:
 
     def __init__(self, minconn=1, maxconn=10):
 
@@ -283,3 +283,17 @@ class LiferManager:
             except Exception:
                 logger.exception("An Uncached Exception Has Happened:")
                 return False
+
+    def timer(self) -> UUID | bool:
+        """Makes a CTimer object.
+
+        Returns:
+            UUID | bool: Returns the made CTimer uid, otherwise False
+        """
+        # ! have to make a timer object
+        try:
+            _ = CTimer()
+            return _.uid
+        except Exception:
+            logger.exception("In Making a CTimer Object in LM.timer Method.")
+            return False
