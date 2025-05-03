@@ -94,28 +94,3 @@ class LiferManager:
         Returns:
             bool: **True** if Inserting was successful else **False**.
         """
-
-    def time_timer(
-        self,
-        t1: dt.datetime,
-        t2: dt.datetime,
-    ) -> float:
-        """This Method gets two datetime objects and measure their distance in time and return it in a seconds.
-            NOTE: The two variables must be datetime object or it will raise value error.
-        Args:
-            t1 (dt.datetime): First time in a form of datetime.datetime object.
-            t2 (dt.datetime): Second time in a form of datetime.datetime object.
-
-        Returns:
-            float: distance between t2 and t1(or vise versa.)
-        """
-
-    def start_timer(self) -> tuple:
-        """Makes a new datetime.datetime object with unique id.
-
-        Returns:
-            tuple: return a (id,datetime) objects in a tuple form to not be tampered with.
-        """
-
-    def end_timer(self):
-        pass

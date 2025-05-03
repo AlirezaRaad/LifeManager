@@ -18,18 +18,11 @@ from psycopg2.errors import (
 )
 from psycopg2.pool import SimpleConnectionPool
 
+# * Make a every time this script runs.
+from logger_config import logger
+
 # TODO: Make logger in every corner of the program for better understanding.
 
-# * Make a every time this script runs.
-os.makedirs("log", exist_ok=True)
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-handler = logging.FileHandler(
-    f"log/{dt.datetime.now().strftime("%d-%m-%Y--%H-%M-%S")}.log"
-)
-handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-logger.addHandler(handler)
 
 # TODO: at the end, make a single method to all the tables in a single go. it would be beneficial, I think?
 
@@ -290,27 +283,3 @@ class LiferManager:
             except Exception:
                 logger.exception("An Uncached Exception Has Happened:")
                 return False
-
-    def time_timer(
-        self,
-        t1: dt.datetime,
-        t2: dt.datetime,
-    ) -> float:
-
-        # GOAL: raise custom Value Error for t1,t2 if their not a datetime object.
-        if not isinstance(t1, dt.datetime):
-            raise TypeError(f"t1 type({type(t1)}) is not an datetime object.")
-        if not isinstance(t1, dt.datetime):
-            raise TypeError(f"t2 type({type(t2)}) is not an datetime object.")
-
-        try:
-            return abs((t2 - t1).total_seconds())
-        except Exception:
-            logger.exception("In time_timer method: ")
-            return False
-
-    def start_timer(self):
-        pass
-
-    def end_timer(self):
-        pass
