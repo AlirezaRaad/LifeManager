@@ -329,7 +329,7 @@ class LifeManager:
             logger.info(f"❌ Backup failed: {e}")
             return False
 
-    def restore_backup(self, backup_path: Literal["latest"] = "latest"):
+    def restore_backup(self, backup_path: Literal["latest"] = "latest") -> bool:
 
         if backup_path == "latest":
             backup_path = os.path.abspath(
