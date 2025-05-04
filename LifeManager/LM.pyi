@@ -107,7 +107,27 @@ class LifeManager:
         """
         ...
 
-    def backup(self): ...
+    def backup(self) -> bool:
+        """Generate Backup of the whole DB and store it in backup folder.
+
+        Returns:
+            bool: True if **BACKUP** process was successful; otherwise False
+        """
+
+        ...
+
+    def restore_backup(self, backup_path: Literal["latest"] = "latest") -> bool:
+        """Restore the desired backup file using its path
+
+        Args:
+            backup_path (Literal[&quot;latest&quot;], optional): You can either enter the **FULL** path of the backup to restore or use the **LATEST** backup that you got. Defaults to "latest".
+
+        Returns:
+            bool: True if the process was successful; Otherwise False.
+        """
+
+        ...
+
     def fetch_all_rows(self, week: str = None) -> Union[pd.core.frame.DataFrame, bool]:
         """Return a pandas dataframe containing the desired week format's data.
 

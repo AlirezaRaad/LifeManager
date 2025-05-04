@@ -324,9 +324,10 @@ class LifeManager:
         try:
             subprocess.run(command, check=True)
             logger.info(f"✅ Backup successful: {output_path}")
-
+            return True
         except subprocess.CalledProcessError as e:
             logger.info(f"❌ Backup failed: {e}")
+            return False
 
     def restore_backup(self, backup_path: Literal["latest"] = "latest"):
 
