@@ -47,7 +47,7 @@ class LifeManager:
             minconn=minconn, maxconn=maxconn, **self.__config
         )
 
-        self.current_week_name = deque(maxlen=2)
+        self.current_week_name = None
 
     @property
     def config(self):
@@ -196,7 +196,7 @@ class LifeManager:
         date = dt.datetime.now().isocalendar()
         year, week = date.year, date.week
 
-        self.current_week_name.append(f"y{year}w{week}")
+        self.current_week_name = f"y{year}w{week}"
 
         table_name = f"y{year}w{week}"
 
@@ -266,7 +266,7 @@ class LifeManager:
                 query = sql.SQL(
                     "INSERT INTO {} (weekDay, duration, taskid, description) VALUES ({},{},{},{})"
                 ).format(
-                    sql.Identifier(self.current_week_name[-1]),
+                    sql.Identifier(self.current_week_name),
                     s_i(f"{dt.datetime.now().isocalendar().weekday}"),
                     s_i(f"{duration}"),
                     s_i(f"{task_id}"),
@@ -274,7 +274,7 @@ class LifeManager:
                 )
                 cursor.execute(query)
                 logger.info(
-                    f"Inserted {duration} {task_id} {description} to the {[self.current_week_name[-1]]} TABLE."
+                    f"Inserted {duration} {task_id} {description} to the {[self.current_week_name]} TABLE."
                 )
                 return True
             except ForeignKeyViolation:
