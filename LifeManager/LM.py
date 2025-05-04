@@ -205,6 +205,7 @@ class LifeManager:
                 query = sql.SQL(
                     """CREATE TABLE IF NOT EXISTS {table} (
                                 id SERIAL PRIMARY KEY, 
+                                weekDay INT,
                                 duration INT NOT NULL, 
                                 taskID INT NOT NULL , 
                                 description TEXT,
@@ -262,9 +263,10 @@ class LifeManager:
 
             try:
                 query = sql.SQL(
-                    "INSERT INTO {} (duration, taskid, description) VALUES ({},{},{})"
+                    "INSERT INTO {} (weekDay, duration, taskid, description) VALUES ({},{},{},{})"
                 ).format(
                     sql.Identifier(self.current_week_name),
+                    s_i(f"{dt.datetime.now().isocalendar().weekday}"),
                     s_i(f"{duration}"),
                     s_i(f"{task_id}"),
                     s_i(description),
