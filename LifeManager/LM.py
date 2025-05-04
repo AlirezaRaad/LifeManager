@@ -328,11 +328,30 @@ class LifeManager:
         except subprocess.CalledProcessError as e:
             logger.info(f"❌ Backup failed: {e}")
 
-    def restore_backup(self):
-        pass
+    def restore_backup(self, backup_path: Literal["latest"] = "latest"):
 
-    def fetch_all_rows(self, week: str) -> Union[pd.core.frame.DataFrame, bool]:
+        if backup_path == "latest":
+            backup_path = os.path.abspath(
+                os.path.join("backup", sorted(os.listdir("backup"))[-1])
+            )
+        restore_command = (
+            f"pg_restore  -d workmanager --clean --if-exists {backup_path}"
+        )
 
+        try:
+            subprocess.run(restore_command, check=True, shell=True)
+            logger.info(
+                f"Database 'workmanager' restored successfully from {backup_path}."
+            )
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.exception(f"Error occurred during restore: ")
+            return False
+
+    def fetch_all_rows(self, week: str = None) -> Union[pd.core.frame.DataFrame, bool]:
+
+        if week is None:
+            week = self.current_week_name
         try:
             engin = create_engine(
                 f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",

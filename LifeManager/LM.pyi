@@ -1,7 +1,9 @@
 import datetime as dt
 from contextlib import contextmanager
-from typing import Literal
+from typing import Literal, Union
 from uuid import UUID
+
+import pandas as pd
 
 class LifeManager:
     def __init__(self, minconn: int = 1, maxconn: int = 10): ...
@@ -103,4 +105,17 @@ class LifeManager:
         Returns:
             UUID | bool: Returns the made CTimer uid, otherwise False
         """
+        ...
+
+    def backup(self): ...
+    def fetch_all_rows(self, week: str = None) -> Union[pd.core.frame.DataFrame, bool]:
+        """Return a pandas dataframe containing the desired week format's data.
+
+        Args:
+            week (str, optional): Correct format(y2025w18). Defaults to None.
+
+        Returns:
+            Union[pd.core.frame.DataFrame, bool]: Return dataFrame; otherwise False
+        """
+
         ...
