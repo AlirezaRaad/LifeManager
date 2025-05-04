@@ -1,12 +1,11 @@
 import datetime as dt
-import logging
 import os
 import subprocess
+from collections import deque
 from contextlib import contextmanager
 from typing import Literal, Union
 from uuid import UUID
 
-import numpy as np
 import pandas as pd
 import psycopg2 as psql
 from dotenv import load_dotenv
@@ -28,8 +27,6 @@ from .custom_timer import CTimer
 # * Make a every time this script runs.
 from .logger_config import logger
 
-# TODO: at the end, make a single method to all the tables in a single go. it would be beneficial, I think?
-
 
 class LifeManager:
 
@@ -50,7 +47,7 @@ class LifeManager:
             minconn=minconn, maxconn=maxconn, **self.__config
         )
 
-        self.current_week_name = None
+        self.current_week_name = deque(maxlen=2)
 
     @property
     def config(self):
@@ -199,7 +196,7 @@ class LifeManager:
         date = dt.datetime.now().isocalendar()
         year, week = date.year, date.week
 
-        self.current_week_name = f"y{year}w{week}"
+        self.current_week_name.append(f"y{year}w{week}")
 
         table_name = f"y{year}w{week}"
 
@@ -259,8 +256,8 @@ class LifeManager:
         self, duration: float, task_id: int, description: str = None
     ) -> bool:
 
-        self.MakeWeeklyTables()
-        logger.info("Used MakeWeeklyTables Method in InsertIntoWeeklyTable")
+        if not self.MakeWeeklyTables():
+            logger.error("In InsertIntoWeeklyTable, MakeWeeklyTables got an error")
 
         with self.__cursor() as cursor:
             s_i = sql.Literal
@@ -269,7 +266,7 @@ class LifeManager:
                 query = sql.SQL(
                     "INSERT INTO {} (weekDay, duration, taskid, description) VALUES ({},{},{},{})"
                 ).format(
-                    sql.Identifier(self.current_week_name),
+                    sql.Identifier(self.current_week_name[-1]),
                     s_i(f"{dt.datetime.now().isocalendar().weekday}"),
                     s_i(f"{duration}"),
                     s_i(f"{task_id}"),
@@ -277,7 +274,7 @@ class LifeManager:
                 )
                 cursor.execute(query)
                 logger.info(
-                    f"Inserted {duration} {task_id} {description} to the {self.current_week_name} TABLE."
+                    f"Inserted {duration} {task_id} {description} to the {[self.current_week_name[-1]]} TABLE."
                 )
                 return True
             except ForeignKeyViolation:
@@ -352,7 +349,7 @@ class LifeManager:
     def fetch_all_rows(self, week: str = None) -> Union[pd.core.frame.DataFrame, bool]:
 
         if week is None:
-            week = self.current_week_name
+            week = self.current_week_name[-1]
         try:
             engin = create_engine(
                 f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
