@@ -3,7 +3,7 @@ import logging
 import os
 import subprocess
 from contextlib import contextmanager
-from typing import Literal
+from typing import Literal, Union
 from uuid import UUID
 
 import numpy as np
@@ -16,9 +16,12 @@ from psycopg2.errors import (
     DuplicateTable,
     ForeignKeyViolation,
     InvalidTextRepresentation,
+    UndefinedTable,
     UniqueViolation,
 )
 from psycopg2.pool import SimpleConnectionPool
+from sqlalchemy import create_engine
+from sqlalchemy.exc import ProgrammingError
 
 from .custom_timer import CTimer
 
@@ -227,7 +230,7 @@ class LifeManager:
 
     def ShowAllTables(
         self, table_schema: str = "public", table_type: str = "BASE TABLE"
-    ) -> str | bool:
+    ) -> list | bool:
 
         try:
             with self.__cursor() as cursor:
@@ -245,6 +248,7 @@ class LifeManager:
                 cursor.execute(query)
                 tables = cursor.fetchall()
 
+            return [x[0] for x in tables]
             return "\n".join(f"{i}. {j[0]}" for i, j in enumerate(tables, start=1))
 
         except:
@@ -323,3 +327,32 @@ class LifeManager:
 
         except subprocess.CalledProcessError as e:
             logger.info(f"❌ Backup failed: {e}")
+
+    def restore_backup(self):
+        pass
+
+    def fetch_all_rows(self, week: str) -> Union[pd.core.frame.DataFrame, bool]:
+
+        try:
+            engin = create_engine(
+                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+                pool_size=10,
+            )
+
+            query = f'SELECT * FROM "{week}"'
+            logger.info(f"User Fetched {week} data.")
+            return pd.read_sql(query, engin)
+
+        except ProgrammingError as e:
+
+            if isinstance(e.orig, UndefinedTable):
+                logger.exception(
+                    f"User tried to access a table '{week}' that is not in the DB."
+                )
+            else:
+                logger.exception(f"An error occurred: {e}")
+            return False
+
+        except Exception:
+            logger.exception(f"An error in fetch_all_rows")
+            return False
