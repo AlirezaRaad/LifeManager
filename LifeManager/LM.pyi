@@ -1,141 +1,131 @@
 import datetime as dt
 from contextlib import contextmanager
-from typing import Literal, Union
+from typing import Generator, Literal, Optional, Union
 from uuid import UUID
 
 import pandas as pd
 
 class LifeManager:
     def __init__(self, minconn: int = 1, maxconn: int = 10): ...
-    @property
-    def config(self) -> dict: ...
     @contextmanager
-    def __cursor(self):
-        """ "Makes A cursor pool and a yields cursor from the pool."""
+    def __cursor(self) -> Generator:
+        """Makes a cursor pool and yields a cursor from the pool."""
         ...
 
-    def MakePsqlDB(self) -> bool:
-        """Make a PostgresSql database based on .env "PSQ_*" parameters
+    def make_psql_db(self) -> bool:
+        """Create a PostgreSQL database based on .env "PSQ_*" parameters.
 
         Returns:
-            _type_: bool
+            bool: True if the database is created successfully, otherwise False.
         """
         ...
 
-    def DailyTasksTableAdder(self, task_name: str, *, ref_to=None) -> bool:
-        """This Method adds task to the task table. For example you might add 'Udemy' subtask to 'Learning' main task.
-            **NOTE: IT WILL MAKE A PARENT IF ref_to=None**
-            **NOTE: It will return False If you entered a ref_to that does not exist. First You need to add it manually.**
+    def add_daily_task(self, task_name: str, *, ref_to: Optional[str] = None) -> bool:
+        """This method adds a task to the task table. For example, you might add 'Udemy' as a subtask of 'Learning'.
+
+        **NOTE: If ref_to is None, it will create a parent task.**
+        **NOTE: It will return False if ref_to does not exist; first, add it manually.**
 
         Args:
-            task_name (str): This is the subtask.(could be main if task_parent is None)
-            ref_to (str): This is the task that you would refer to.
-
-        Example:
-            DailyTasksTable(task_name= 'Learning') -> This make a parent 'Learning' that others can refer to.
-
-            DailyTasksTable(task_name= 'Udemy', ref_to='Learning') -> this makes 'Udemy' child of 'Learning'
+            task_name (str): The task name to add (could be a main task if ref_to is None).
+            ref_to (Optional[str]): The task to refer to (parent task). Defaults to None.
 
         Returns:
-            bool: returns True if making task was successful
+            bool: True if the task was added successfully, otherwise False.
         """
         ...
 
-    def _CreateDailyTasksTable(self) -> bool:
-        """This Method makes Tasks Table in the database
+    def _create_daily_tasks_table(self) -> bool:
+        """Create the Tasks table in the database.
 
         Returns:
-            bool: True if it  successfully built it and False if it fails.
-        """
-
-    def __AllParentTasks(self) -> list:
-        """This Method Will return a Literal object containing every PARENT in the dailytask TABLE.
-
-        Returns:
-            list: A list Obj.
+            bool: True if the table was created successfully, otherwise False.
         """
         ...
 
-    def MakeWeeklyTables(self) -> bool:
-        """
-        Makes a Table with the current year & week name is it.
-
-        Assume we are in the week 16 of 2025, it makes a y2025w16 table.
-
+    def get_all_parent_tasks(self) -> list[str]:
+        """Return a list of all parent tasks in the DailyTasks table.
 
         Returns:
-            bool: True if it successfully make the table and False otherwise.
+            list[str]: A list of parent task names.
         """
         ...
 
-    def ShowAllTables(
+    def make_weekly_tables(self) -> bool:
+        """Create a table for the current year and week (e.g., y2025w16 for week 16 of 2025).
+
+        Returns:
+            bool: True if the table was created successfully, otherwise False.
+        """
+        ...
+
+    def show_all_tables(
         self,
         table_schema: str = "public",
         table_type: Literal[
             "BASE TABLE", "VIEW", "FOREIGN TABLE", "LOCAL TEMPORARY"
         ] = "BASE TABLE",
-    ) -> str | bool:
-        """
-        Returns a str containing all of the tables using the provided schema and TABLE type.
+    ) -> Union[str, bool]:
+        """Return a string containing all tables using the provided schema and table type.
 
         Args:
             table_schema (str, optional): Defaults to "public".
-            table_type (str, optional):  Defaults to "BASE TABLE".
+            table_type (str, optional): Defaults to "BASE TABLE".
+
+        Returns:
+            str | bool: The list of tables as a string or False if no tables exist.
         """
         ...
 
-    def InsertIntoWeeklyTable(
-        self, duration: float, task_id: int, description: str = None
+    def insert_into_weekly_table(
+        self, duration: float, task_id: int, description: Optional[str] = None
     ) -> bool:
-        """Insert into current week TABLE with provided variables.
+        """Insert a row into the current weekly table with the provided duration, task ID, and description.
 
         Args:
-            duration (float): The duration in **MINUTE**.
-            task_id (int): The ID of your task which you want to add the time(duration) to.
-            description (str, optional): A brief description. Defaults to None.
+            duration (float): The duration in minutes.
+            task_id (int): The task ID to update.
+            description (Optional[str]): A brief description. Defaults to None.
 
         Returns:
-            bool: **True** if Inserting was successful else **False**.
+            bool: True if the insert was successful, otherwise False.
         """
+        ...
 
-    def timer(self) -> UUID | bool:
-        """Makes a CTimer object. Use the uid that it returns to access the CTimer object using CTimer.get_instance() and then use the instance methods.
-
+    def timer(self) -> Union[UUID, bool]:
+        """Create a CTimer object and return its UID.
 
         Returns:
-            UUID | bool: Returns the made CTimer uid, otherwise False
+            UUID | bool: The CTimer UID, or False if creation failed.
         """
         ...
 
     def backup(self) -> bool:
-        """Generate Backup of the whole DB and store it in backup folder.
+        """Generate a backup of the entire database and store it in the backup folder.
 
         Returns:
-            bool: True if **BACKUP** process was successful; otherwise False
+            bool: True if the backup process was successful, otherwise False.
         """
-
         ...
 
-    def restore_backup(self, backup_path: Literal["latest"] = "latest") -> bool:
-        """Restore the desired backup file using its path
+    def restore_backup(self, backup_path: str = "latest") -> bool:
+        """Restore the desired backup file using its path.
 
         Args:
-            backup_path (Literal[&quot;latest&quot;], optional): You can either enter the **FULL** path of the backup to restore or use the **LATEST** backup that you got. Defaults to "latest".
+            backup_path (str, optional): Full path of the backup or "latest" to restore the most recent backup. Defaults to "latest".
 
         Returns:
-            bool: True if the process was successful; Otherwise False.
+            bool: True if the restore process was successful, otherwise False.
         """
-
         ...
 
-    def fetch_all_rows(self, week: str = None) -> Union[pd.core.frame.DataFrame, bool]:
-        """Return a pandas dataframe containing the desired week format's data.
+    def fetch_all_rows(self, week: str = None) -> Union[pd.DataFrame, bool]:
+        """Fetch all rows from the specified week table and return as a pandas DataFrame.
 
         Args:
-            week (str, optional): Correct format(y2025w18). Defaults to None.
+            week (str, optional): Week in format 'y2025w18'. Defaults to None.
 
         Returns:
-            Union[pd.core.frame.DataFrame, bool]: Return dataFrame; otherwise False
+            pd.DataFrame | bool: A pandas DataFrame with the data, or False if the table does not exist.
         """
-
         ...

@@ -41,7 +41,7 @@ class LifeManager:
             "port": os.environ["PGPORT"],
         }
 
-        self.MakePsqlDB()
+        self.make_psql_db()
 
         self._connection_pool = SimpleConnectionPool(
             minconn=minconn, maxconn=maxconn, **self.__config
@@ -49,9 +49,7 @@ class LifeManager:
 
         self.current_week_name = None
 
-    @property
-    def config(self):
-        return self.__config
+        self.make_weekly_tables()
 
     @contextmanager
     def __cursor(self):
@@ -72,7 +70,7 @@ class LifeManager:
             cursor.close()
             self._connection_pool.putconn(conn)
 
-    def MakePsqlDB(self):
+    def make_psql_db(self):
 
         #! NOTE: I specifically DID NOT use connection pool for this one because I the dbname is set to postgres and
         #! this method is a kick start for the database creation and What pool should give to a db that it isn't created
@@ -80,10 +78,10 @@ class LifeManager:
 
         conn_params = {
             "dbname": "postgres",  # Connect to the default 'postgres' database
-            "user": self.config["user"],
-            "password": self.config["password"],
-            "host": self.config["host"],
-            "port": self.config["port"],
+            "user": self.__config["user"],
+            "password": self.__config["password"],
+            "host": self.__config["host"],
+            "port": self.__config["port"],
         }
         try:
             # Connect to the PostgreSQL server
@@ -111,17 +109,17 @@ class LifeManager:
             cursor.close()
             conn.close()
 
-    def DailyTasksTableAdder(self, task_name: str, *, ref_to=None) -> bool:
+    def add_daily_task(self, task_name: str, *, ref_to=None) -> bool:
 
-        if not self._CreateDailyTasksTable():
+        if not self._create_daily_tasks_table():
             logger.critical(
-                f"In DailyTasksTableAdder WHEN it was Calling _CreateDailyTasksTable Method."
+                f"In add_daily_task WHEN it was Calling _create_daily_tasks_table Method."
             )
             return False  # ? It means that if the table creation fails, this method will fail as well
 
         # GOAL: If The referrer is None; Then if the task_name is not already a PARENT, It will make a parent row.
         if ref_to is None:
-            if task_name not in self.__AllParentTasks():
+            if task_name not in self.get_all_parent_tasks():
                 with self.__cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO dailytasks (taskname) VALUES (%s)", (task_name,)
@@ -149,14 +147,14 @@ class LifeManager:
         except UniqueViolation:
             # CONCLUSION: Although Normally if would raise an error because od UNIQUE CONSTRAINT that I put, but here is will
             # CONCLUSION: return true because if this UniqueViolation occurs. it mean the user row is already in db and does not need to return False.
-            logger.exception(f"In DailyTasksTableAdder method, A dupe Key: ")
+            logger.exception(f"In add_daily_task method, A dupe Key: ")
             return True
         except Exception as e:
 
-            logger.exception(f"In DailyTasksTableAdder method")
+            logger.exception(f"In add_daily_task method")
             return False
 
-    def _CreateDailyTasksTable(self) -> bool:
+    def _create_daily_tasks_table(self) -> bool:
 
         with self.__cursor() as cursor:
             try:
@@ -179,20 +177,20 @@ class LifeManager:
 
             except UniqueViolation:
                 logger.exception(
-                    f"In _CreateDailyTasksTable Method You have Duplicate Key: "
+                    f"In _create_daily_tasks_table Method You have Duplicate Key: "
                 )
                 return True
             except Exception as e:
-                logger.exception(f"In _CreateDailyTasksTable Method:")
+                logger.exception(f"In _create_daily_tasks_table Method:")
 
                 return False
 
-    def __AllParentTasks(self):
+    def get_all_parent_tasks(self):
         with self.__cursor() as cursor:
             cursor.execute("SELECT * from dailytasks WHERE parentTaskId IS NULL")
             return [i[1] for i in cursor.fetchall()]
 
-    def MakeWeeklyTables(self):
+    def make_weekly_tables(self):
         date = dt.datetime.now().isocalendar()
         year, week = date.year, date.week
 
@@ -225,7 +223,7 @@ class LifeManager:
                 logger.exception(f"An Error occurred while making {table_name} TABLE: ")
                 return False
 
-    def ShowAllTables(
+    def show_all_tables(
         self, table_schema: str = "public", table_type: str = "BASE TABLE"
     ) -> list | bool:
 
@@ -249,15 +247,16 @@ class LifeManager:
             return "\n".join(f"{i}. {j[0]}" for i, j in enumerate(tables, start=1))
 
         except:
-            logger.exception("In ShowAllTables Method: ")
+            logger.exception("In show_all_tables Method: ")
             return False
 
-    def InsertIntoWeeklyTable(
+    def insert_into_weekly_table(
         self, duration: float, task_id: int, description: str = None
     ) -> bool:
 
-        if not self.MakeWeeklyTables():
-            logger.error("In InsertIntoWeeklyTable, MakeWeeklyTables got an error")
+        if not self.make_weekly_tables():
+            logger.error("In insert_into_weekly_table, make_weekly_tables got an error")
+            return False
 
         with self.__cursor() as cursor:
             s_i = sql.Literal
@@ -278,7 +277,7 @@ class LifeManager:
                 )
                 return True
             except ForeignKeyViolation:
-                logger.exception("InsertIntoWeeklyTable Violated a FK CONSTRAINT: ")
+                logger.exception("insert_into_weekly_table Violated a FK CONSTRAINT: ")
                 return False
             except InvalidTextRepresentation:
                 logger.exception("Entered TEXT instead of int for duration/task_id")
@@ -349,7 +348,7 @@ class LifeManager:
     def fetch_all_rows(self, week: str = None) -> Union[pd.core.frame.DataFrame, bool]:
 
         if week is None:
-            week = self.current_week_name[-1]
+            week = self.current_week_name
         try:
             engin = create_engine(
                 f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
