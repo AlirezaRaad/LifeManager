@@ -398,7 +398,7 @@ class LifeManager:
 
         # ? Making a deque for flags.
 
-        flag = deque(maxlen=2)
+        flag: deque = deque(maxlen=3)
 
         #! Start to make the pie chart
         try:
@@ -418,7 +418,7 @@ class LifeManager:
             )
             plt.legend()
             plt.title("What % You Spend on What", fontsize=20, fontweight="bold")
-            plt.savefig(fname=f"figures/Weekly_pie")
+            plt.savefig(fname=f"figures/pie")
 
             logger.info("PIE chart created successfully.")
             flag.append(True)
@@ -452,6 +452,7 @@ class LifeManager:
 
             start_day_num = week_days_map[start_day]
 
+            # GOAL: Make a df to just have weekday number and Sum of the durations, then sort it.
             df_data = df.groupby("weekday")["duration"].sum()
 
             weekly_data = {i: df_data.get(i, 0) for i in range(1, 8)}
@@ -463,6 +464,7 @@ class LifeManager:
             values = list(ordered_data.values())
             labels = [week_day_names[i] for i in ordered_data.keys()]
 
+            # GOAL: plot it.
             plt.figure(figsize=(10, 6))
             plt.barh(list(ordered_data.keys()), values, color="skyblue")
             plt.yticks(list(ordered_data.keys()), labels)
@@ -474,14 +476,56 @@ class LifeManager:
             )
             plt.ylabel(f"Day of the Week (Starts on {start_day})", fontsize=14)
             plt.xlabel("Total Duration", fontsize=14)
-            plt.savefig(fname="figures/Weekly_bar")
+            plt.savefig(fname="figures/bar")
 
             flag.append(True)
         except Exception:
             logger.exception("An Error in making pie chart.")
             flag.append(False)
 
-        if flag[0] and flag[1]:
+        #! Now let make the line chart
+        try:
+            eligible_weeks = [x for x in self.show_all_tables() if x.startswith("y20")]
+
+            sub_query = (
+                "SELECT '{week}' AS week, SUM(duration) AS total_duration FROM {week}"
+            )
+
+            main_query = [
+                " UNION ALL ".join([sub_query.format(week=i) for i in eligible_weeks])
+            ]
+
+            df = pd.read_sql(main_query[0], engin)
+
+            plt.figure(figsize=(20, 10))
+            plt.plot(
+                df["week"], df["total_duration"], marker="o", label="Total Duration"
+            )
+            if week in df["week"].values:
+                current_week_index = df[df["week"] == week].index[
+                    0
+                ]  # Get the index of the current week
+                plt.plot(
+                    df["week"][current_week_index],
+                    df["total_duration"][current_week_index],
+                    marker="D",
+                    color="red",
+                    markersize=10,
+                    label="Current Week",
+                )
+
+            plt.title("Weekly Total Duration")
+            plt.xlabel("Week")
+            plt.ylabel("Total Duration")
+            plt.legend()
+
+            plt.savefig(fname="figures/line")
+            logger.info("LINE chart created successfully.")
+            flag.append(True)
+        except:
+            logger.exception("An Error in making Line chart")
+            flag.append(False)
+        if flag[0] and flag[1] and flag[2]:
             return True
         else:
-            False
+            return False

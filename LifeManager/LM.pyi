@@ -120,12 +120,39 @@ class LifeManager:
         ...
 
     def fetch_all_rows(self, week: str = None) -> Union[pd.DataFrame, bool]:
-        """Fetch all rows from the specified week table and return as a pandas DataFrame.
+        """
+        Fetch all rows from the specified week table and return them as a pandas DataFrame.
 
         Args:
-            week (str, optional): Week in format 'y2025w18'. Defaults to None.
+            week (str, optional): The name of the week table to fetch, in the format 'y{year}w{week_number}',
+                e.g., 'y2025w18'. Defaults to None.
 
         Returns:
             pd.DataFrame | bool: A pandas DataFrame with the data, or False if the table does not exist.
         """
+
+        ...
+
+    def chart_it(
+        self,
+        week: str = None,
+        start_day: Literal[
+            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+        ] = "Saturday",
+    ):
+        """
+        Generate three different charts and save them in the **figures** folder:
+
+        1. A pie chart showing the distribution of task durations for the selected week.
+        2. A horizontal bar chart showing productivity (total duration) for each day of the selected week.
+        3. A line chart showing total weekly durations across all weeks up to the current one.
+
+        Args:
+            week (str, optional): The week to inspect, in the format 'y{year}w{week_number}',
+                e.g., 'y2025w18'. If not provided, the current week is used. Defaults to None.
+            start_day (Literal["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], optional):
+                Specifies which day of the week should appear first on the horizontal bar chart.
+                Defaults to "Saturday".
+        """
+
         ...
