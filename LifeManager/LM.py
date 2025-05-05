@@ -6,9 +6,11 @@ from contextlib import contextmanager
 from typing import Literal, Union
 from uuid import UUID
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import psycopg2 as psql
 from dotenv import load_dotenv
+from matplotlib import colormaps
 from psycopg2 import sql
 from psycopg2.errors import (
     DuplicateDatabase,
@@ -350,6 +352,7 @@ class LifeManager:
         if week is None:
             week = self.current_week_name
         try:
+            # Makes an engin to connect to psql using pandas.
             engin = create_engine(
                 f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
                 pool_size=10,
@@ -372,3 +375,113 @@ class LifeManager:
         except Exception:
             logger.exception(f"An error in fetch_all_rows")
             return False
+
+    def chart_it(
+        self,
+        week: str = None,
+        start_day: Literal[
+            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+        ] = "Saturday",
+    ):
+        if week is None:
+            week = self.current_week_name
+
+        # Makes an engin to connect to psql using pandas.
+        engin = create_engine(
+            f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+            pool_size=10,
+        )
+
+        query = f"SELECT weekday,duration,taskname FROM {week} as t JOIN dailytasks as d ON t.taskid = d.id;"
+
+        df = pd.read_sql(query, engin)
+
+        # ? Making a deque for flags.
+
+        flag = deque(maxlen=2)
+
+        #! Start to make the pie chart
+        try:
+            num_colors = df["taskname"].nunique()
+            cmap = colormaps.get_cmap(cmap="Set3")
+            colors = [cmap(i / num_colors) for i in range(num_colors)]
+
+            df_data = df.groupby("taskname")["duration"].sum()
+            plt.figure(figsize=(20, 10))
+            plt.pie(
+                x=df_data,
+                labels=df_data.index,
+                autopct="%1.2f%%",
+                startangle=90,
+                colors=colors,
+                textprops={"fontweight": "bold"},
+            )
+            plt.legend()
+            plt.title("What % You Spend on What", fontsize=20, fontweight="bold")
+            plt.savefig(fname=f"figures/Weekly_pie")
+
+            logger.info("PIE chart created successfully.")
+            flag.append(True)
+        except Exception:
+            logger.exception("An Error in making pie chart.")
+            flag.append(False)
+
+        #! Start TO make Barchart
+        try:
+            # GOAL: This is a mapping for week days and in my country week starts at Saturday thus, it is set to 1.
+            week_days_map = {
+                "Monday": 3,
+                "Tuesday": 4,
+                "Wednesday": 5,
+                "Thursday": 6,
+                "Friday": 7,
+                "Saturday": 1,
+                "Sunday": 2,
+            }
+
+            # GOAL: Reverse map of above for x axis in barchart.
+            week_day_names = {
+                3: "Monday",
+                4: "Tuesday",
+                5: "Wednesday",
+                6: "Thursday",
+                7: "Friday",
+                1: "Saturday",
+                2: "Sunday",
+            }
+
+            start_day_num = week_days_map[start_day]
+
+            df_data = df.groupby("weekday")["duration"].sum()
+
+            weekly_data = {i: df_data.get(i, 0) for i in range(1, 8)}
+
+            ordered_data = {
+                ((i - start_day_num) % 7 + 1): weekly_data[i] for i in range(1, 8)
+            }
+
+            values = list(ordered_data.values())
+            labels = [week_day_names[i] for i in ordered_data.keys()]
+
+            plt.figure(figsize=(10, 6))
+            plt.barh(list(ordered_data.keys()), values, color="skyblue")
+            plt.yticks(list(ordered_data.keys()), labels)
+
+            plt.title(
+                "Total Duration for Each Day of the Week",
+                fontsize=20,
+                fontweight="bold",
+            )
+            plt.ylabel(f"Day of the Week (Starts on {start_day})", fontsize=14)
+            plt.xlabel("Total Duration", fontsize=14)
+            plt.savefig(fname="figures/Weekly_bar")
+
+            flag.append(True)
+        except Exception:
+            logger.exception("An Error in making pie chart.")
+            flag.append(False)
+
+        if flag[0] and flag[1]:
+            return True
+        else:
+            False
