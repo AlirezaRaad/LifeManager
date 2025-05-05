@@ -193,7 +193,7 @@ class LifeManager:
             return [i[1] for i in cursor.fetchall()]
 
     def make_weekly_tables(self):
-        date = dt.datetime.now().isocalendar()
+        date = dt.datetime.now(dt.timezone.utc).isocalendar()
         year, week = date.year, date.week
 
         self.current_week_name = f"y{year}w{week}"
@@ -268,7 +268,7 @@ class LifeManager:
                     "INSERT INTO {} (weekDay, duration, taskid, description) VALUES ({},{},{},{})"
                 ).format(
                     sql.Identifier(self.current_week_name),
-                    s_i(f"{dt.datetime.now().isocalendar().weekday}"),
+                    s_i(f"{dt.datetime.now(dt.timezone.utc).isocalendar().weekday}"),
                     s_i(f"{duration}"),
                     s_i(f"{task_id}"),
                     s_i(description),
@@ -307,7 +307,7 @@ class LifeManager:
     def backup(self):
 
         os.makedirs("backup", exist_ok=True)
-        timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d_%H%M%S")
         output_path = f"backup/workmanager_backup_{timestamp}.backup"
 
         command = [
