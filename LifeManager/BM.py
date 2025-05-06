@@ -1,7 +1,12 @@
 from collections import deque
 
 from psycopg2 import sql
-from psycopg2.errors import DuplicateFunction, DuplicateTable, UniqueViolation
+from psycopg2.errors import (
+    CheckViolation,
+    DuplicateFunction,
+    DuplicateTable,
+    UniqueViolation,
+)
 
 from .LM import LifeManager
 from .logger_config import logger
@@ -12,7 +17,7 @@ class CBanker:
         self.__parent = LifeManager()
         self._cursor = self.__parent._cursor
 
-    def make_banker_tables(self):
+    def make_tables(self):
 
         flags = deque()
 
@@ -26,6 +31,7 @@ class CBanker:
                 ) AS table_exists;"""
             )
             answer = cursor.fetchone()[0]
+
             if answer:
                 flags.append(answer)
             else:
@@ -42,12 +48,15 @@ class CBanker:
                 """
             )
             answer = cursor.fetchone()[0]
+
             if answer:
+
                 flags.append(answer)
             else:
+
                 flags.append(self.__make_banker_table())
 
-            return any(flags)
+            return all(flags)
 
     def __make_banks_table(self):
         try:
@@ -71,6 +80,7 @@ class CBanker:
             flag = deque()
             try:
                 # Create the banker table
+                logger.info("Creating banker table...")
                 cursor.execute(
                     """CREATE TABLE banker (
                             id SERIAL PRIMARY KEY,
@@ -88,10 +98,11 @@ class CBanker:
             except Exception as e:
                 logger.exception("Error creating banker table:")
                 cursor.connection.rollback()  # Roll back transaction
-                return False
+                flag.append(False)
 
             try:
                 # Create the trigger function
+                logger.info("Creating trigger function...")
                 cursor.execute(
                     """
                     CREATE OR REPLACE FUNCTION change_balance_on_insert()
@@ -104,6 +115,11 @@ class CBanker:
                             ORDER BY id DESC 
                             LIMIT 1;
                             NEW.balance := COALESCE(lastBalance, 0) + NEW.amount;
+
+                            IF lastBalance IS NULL THEN
+                                NEW.description := 'First Initial';
+                            END IF;
+
                             RETURN NEW;
                         END;
                     $$ LANGUAGE plpgsql;
@@ -115,10 +131,11 @@ class CBanker:
             except Exception as e:
                 logger.exception("Error creating banker trigger function: ")
                 cursor.connection.rollback()  # Roll back transaction
-                return False
+                flag.append(False)
 
             try:
                 # Create the trigger
+                logger.info("Creating trigger...")
                 cursor.execute(
                     """
                     CREATE OR REPLACE TRIGGER change_balance_on_insert_trigger
@@ -132,12 +149,33 @@ class CBanker:
             except Exception as e:
                 logger.exception("Error creating banker trigger: ")
                 cursor.connection.rollback()  # Roll back transaction
-                return False
+                flag.append(False)
+
+            # Log the flag status
+            logger.info(f"Flag list after operations: {list(flag)}")
 
             # Commit the transaction if all steps succeed
-            cursor.connection.commit()
+            try:
+                logger.info("Committing transaction...")
+                cursor.connection.commit()
+            except Exception as e:
+                logger.exception("Error committing transaction: ")
+                cursor.connection.rollback()  # Roll back transaction in case of failure
+                return False
 
-            return all(flag)
+            # Return the result based on the flags
+            result = all(flag)
+            if not result:
+                logger.info("One or more operations failed. Returning False.")
+            return result
+
+    def __fetch_bank_id(self, bank_name) -> int | bool:
+        with self._cursor() as cursor:
+            cursor.execute("""SELECT id FROM banks WHERE bankname = %s""", (bank_name,))
+            answer = cursor.fetchone()
+            if answer is None:
+                return False
+            return answer[0]
 
     def add_bank(self, bank_name):
         """With This Method you can add a bank name to you database."""
@@ -156,4 +194,25 @@ class CBanker:
                 logger.exception(
                     f"There is an error in adding {bank_name} to the banks TABLE."
                 )
+                return False
+
+    def make_transaction(
+        self, bank_name: str, amount: float, description: str | None = None
+    ):
+
+        bank_id = self.__fetch_bank_id(bank_name=bank_name)
+        if not bank_id:
+            logger.error(f"{bank_name} doesn't exists in the banks TABLE")
+            return False
+
+        with self._cursor() as cursor:
+            try:
+                cursor.execute(
+                    """INSERT INTO banker (bankid, amount, description) VALUES (%s,%s,%s)""",
+                    (bank_id, amount, description),
+                )
+                return True
+            except CheckViolation:
+                #! NEGATIVE balance.
+                logger.exception("The Balance was about to get NEGATIVE.")
                 return False
