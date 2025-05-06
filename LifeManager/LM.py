@@ -24,10 +24,8 @@ from psycopg2.pool import SimpleConnectionPool
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
 
-from .custom_timer import CTimer
-
-# * Make a every time this script runs.
 from .logger_config import logger
+from .TM import CTimer
 
 
 class LifeManager:
@@ -54,7 +52,7 @@ class LifeManager:
         self.make_weekly_tables()
 
     @contextmanager
-    def __cursor(self):
+    def _cursor(self):
 
         conn = self._connection_pool.getconn()
         cursor = conn.cursor()
@@ -122,7 +120,7 @@ class LifeManager:
         # GOAL: If The referrer is None; Then if the task_name is not already a PARENT, It will make a parent row.
         if ref_to is None:
             if task_name not in self.get_all_parent_tasks():
-                with self.__cursor() as cursor:
+                with self._cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO dailytasks (taskname) VALUES (%s)", (task_name,)
                     )
@@ -130,7 +128,7 @@ class LifeManager:
                     return True
 
         try:
-            with self.__cursor() as cursor:
+            with self._cursor() as cursor:
 
                 # GOAL: This will fetch the PARENT id from db from the dailytasks.
                 cursor.execute(
@@ -158,7 +156,7 @@ class LifeManager:
 
     def _create_daily_tasks_table(self) -> bool:
 
-        with self.__cursor() as cursor:
+        with self._cursor() as cursor:
             try:
                 # GOAL: This Created The Table with Unique Constrain on both columns but not (taskName,NULL)
                 cursor.execute(
@@ -188,7 +186,7 @@ class LifeManager:
                 return False
 
     def get_all_parent_tasks(self):
-        with self.__cursor() as cursor:
+        with self._cursor() as cursor:
             cursor.execute("SELECT * from dailytasks WHERE parentTaskId IS NULL")
             return [i[1] for i in cursor.fetchall()]
 
@@ -200,7 +198,7 @@ class LifeManager:
 
         table_name = f"y{year}w{week}"
 
-        with self.__cursor() as cursor:
+        with self._cursor() as cursor:
             try:
                 query = sql.SQL(
                     """CREATE TABLE IF NOT EXISTS {table} (
@@ -230,7 +228,7 @@ class LifeManager:
     ) -> list | bool:
 
         try:
-            with self.__cursor() as cursor:
+            with self._cursor() as cursor:
                 query = sql.SQL(
                     """
                     SELECT table_name FROM information_schema.tables 
@@ -260,7 +258,7 @@ class LifeManager:
             logger.error("In insert_into_weekly_table, make_weekly_tables got an error")
             return False
 
-        with self.__cursor() as cursor:
+        with self._cursor() as cursor:
             s_i = sql.Literal
 
             try:
