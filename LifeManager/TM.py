@@ -26,6 +26,8 @@ class CTimer:
         self.uid = uuid.uuid4()
         CTimer._instances[self.uid] = self
         logger.info(f"Made new instance of CTimer class with the UUID of : {self.uid}")
+        self.__pause = None
+        self.__start = None
 
     def get_uid(self):
         return self.uid
@@ -64,3 +66,5 @@ class CTimer:
         if not self.__start:
             raise ValueError("First Initiate the start using **start_it** method")
         self.__end = dt.datetime.now()
+
+    def pause_it(self): ...

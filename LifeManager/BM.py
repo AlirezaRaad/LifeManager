@@ -1,6 +1,5 @@
 from collections import deque
 
-from psycopg2 import sql
 from psycopg2.errors import (
     CheckViolation,
     DuplicateFunction,
@@ -8,14 +7,13 @@ from psycopg2.errors import (
     UniqueViolation,
 )
 
-from .LM import LifeManager
+from .Cursor import Cursor
 from .logger_config import logger
 
 
-class CBanker:
-    def __init__(self):
-        self.__parent = LifeManager()
-        self._cursor = self.__parent._cursor
+class CBanker(Cursor):
+    def __init__(self, minconn=1, maxconn=10):
+        super().__init__(minconn, maxconn)
 
     def make_tables(self):
 

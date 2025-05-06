@@ -24,51 +24,24 @@ from psycopg2.pool import SimpleConnectionPool
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
 
+from .BM import CBanker
+from .Cursor import Cursor
 from .logger_config import logger
 from .TM import CTimer
 
 
-class LifeManager:
+class LifeManager(Cursor):
 
     def __init__(self, minconn=1, maxconn=10):
 
         load_dotenv()
-        self.__config = {
-            "dbname": "workmanager",
-            "user": os.environ["PGUSER"],
-            "password": os.environ["PGPASSWORD"],
-            "host": os.environ["PGHOST"],
-            "port": os.environ["PGPORT"],
-        }
+        super().__init__(minconn, maxconn)
 
         self.make_psql_db()
-
-        self._connection_pool = SimpleConnectionPool(
-            minconn=minconn, maxconn=maxconn, **self.__config
-        )
 
         self.current_week_name = None
 
         self.make_weekly_tables()
-
-    @contextmanager
-    def _cursor(self):
-
-        conn = self._connection_pool.getconn()
-        cursor = conn.cursor()
-
-        try:
-            yield cursor
-            conn.commit()
-
-        except Exception as e:
-            conn.rollback()
-            logger.exception("In @contextmanager's Exception")
-            raise e
-
-        finally:
-            cursor.close()
-            self._connection_pool.putconn(conn)
 
     def make_psql_db(self):
 
@@ -78,10 +51,10 @@ class LifeManager:
 
         conn_params = {
             "dbname": "postgres",  # Connect to the default 'postgres' database
-            "user": self.__config["user"],
-            "password": self.__config["password"],
-            "host": self.__config["host"],
-            "port": self.__config["port"],
+            "user": self._config["user"],
+            "password": self._config["password"],
+            "host": self._config["host"],
+            "port": self._config["port"],
         }
         try:
             # Connect to the PostgreSQL server
@@ -526,4 +499,15 @@ class LifeManager:
         if flag[0] and flag[1] and flag[2]:
             return True
         else:
+            return False
+
+    @property
+    def bank(self) -> bool:
+        try:
+            self.banker = CBanker()
+            return True
+        except Exception:
+            logger.exception(
+                "An Exception in making an CBanker instance in LM.bank method."
+            )
             return False

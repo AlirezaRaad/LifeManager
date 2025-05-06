@@ -156,3 +156,13 @@ class LifeManager:
         """
 
         ...
+
+    @property
+    def bank(self) -> bool:
+        """
+        Create a CBanker object and store it in instance.banker.
+
+        Returns:
+            bool: True if the assignment was successful, otherwise False.
+        """
+        ...
