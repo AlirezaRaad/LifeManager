@@ -26,8 +26,10 @@ class CTimer:
         self.uid = uuid.uuid4()
         CTimer._instances[self.uid] = self
         logger.info(f"Made new instance of CTimer class with the UUID of : {self.uid}")
-        self.__pause = None
         self.__start = None
+        self.__end = None
+        self.__pause = None
+        self.__total_pause_duration = dt.timedelta(0)
 
     def get_uid(self):
         return self.uid
@@ -40,31 +42,52 @@ class CTimer:
         """This Method returns a float number representing the number of seconds between start and finish.
 
         Raises:
-            ValueError: It raises when you dont initiate start_it Method.
-            ValueError: It raises when you dont initiate end_it Method.
+            ValueError: It raises when you dont initiate start Method.
+            ValueError: It raises when you dont initiate end Method.
 
         Returns:
             float | bool: Return the seconds in float; Or returns False if any exceptions happens; check logs.
         """
         try:
             if not self.__start:
-                raise ValueError("Object does now have any start attribute.")
-            if not self.__end:
-                raise ValueError("Object does now have any end attribute.")
+                raise ValueError("Object does not have any start attribute.")
 
-            return abs((self.__start - self.__end).total_seconds())
+            end_time = self.__end or dt.datetime.now()
+            return (
+                end_time - self.__start - self.__total_pause_duration
+            ).total_seconds()
         except Exception:
-            logger.exception("In time_it method: ")
+            logger.exception("In time method: ")
             return False
 
-    def start_it(self) -> None:
+    def start(self) -> None:
         """Makes a new datetime.datetime.now object and sets it to the start attribute"""
         self.__start = dt.datetime.now()
+        self.__pause = None
+        self.__total_pause_duration = dt.timedelta(0)
 
-    def end_it(self) -> None:
+    def end(self) -> None:
         """Makes a new datetime.datetime.now object and sets it to the start attribute"""
         if not self.__start:
-            raise ValueError("First Initiate the start using **start_it** method")
+            raise ValueError("First Initiate the start using **start** method")
         self.__end = dt.datetime.now()
 
-    def pause_it(self): ...
+    def pause(self):
+        """Pauses the timer and records the pause duration"""
+
+        if not self.__start:
+            raise ValueError("First initiate the start using **start** method")
+
+        if self.__pause is not None:
+            raise ValueError("Timer is already paused.")
+
+        self.__pause = dt.datetime.now()
+
+    def resume(self) -> None:
+        """Resumes the timer after being paused"""
+        if self.__pause is None:
+            raise ValueError("Timer has not been paused.")
+
+        pause_duration = dt.datetime.now() - self.__pause
+        self.__total_pause_duration += pause_duration
+        self.__pause = None
