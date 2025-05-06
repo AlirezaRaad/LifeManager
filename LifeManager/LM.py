@@ -1,4 +1,5 @@
 import datetime as dt
+import inspect
 import os
 import subprocess
 from collections import deque
@@ -42,6 +43,16 @@ class LifeManager(Cursor):
         self.current_week_name = None
 
         self.make_weekly_tables()
+
+        # * Append the file path of where this class was called into the log file.
+        stack = inspect.stack()
+        if len(stack) > 1:
+            caller_frame = stack[1]
+            caller_info = f"{caller_frame.filename}:{caller_frame.lineno} in {caller_frame.function}"
+        else:
+            caller_info = "Caller info not available"
+
+        logger.info(f"Made new instance of LifeManage — called from {caller_info}")
 
     def make_psql_db(self):
 
