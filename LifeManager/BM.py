@@ -199,8 +199,13 @@ class CBanker(Cursor):
                 return False
 
     def make_transaction(
-        self, bank_name: str, amount: float, description: str | None = None
+        self,
+        bank_name: str,
+        amount: float,
+        expense_type: int,
+        description: str | None = None,
     ):
+        # expense_id =
 
         bank_id = self.__fetch_bank_id(bank_name=bank_name)
         if not bank_id:
@@ -223,11 +228,83 @@ class CBanker(Cursor):
 
         with self._cursor() as cursor:
             try:
+                # GOAL: This Created The Table with Unique Constrain on both columns but not (expenseName,NULL)
                 cursor.execute(
-                    "CREATE TABLE IF NOT EXISTS BankExpenseType (id SERIAL PRIMARY KEY, name TEXT);"
+                    """CREATE TABLE bankexpensetype (id SERIAL PRIMARY KEY, expenseName TEXT, parentExpenseId INTEGER,
+                            CONSTRAINT FK_self_parent_expense FOREIGN KEY (parentExpenseId) REFERENCES bankexpensetype(id),
+                            CONSTRAINT unique_expense_rows UNIQUE(expenseName, parentExpenseId));"""
+                )
+
+                # GOAL: Now I manually made (expenseName,NULL) a UNIQUE.
+                cursor.execute(
+                    """CREATE UNIQUE INDEX unique_null_parent_expense ON bankexpensetype(expenseName) WHERE parentExpenseId IS NULL;"""
                 )
                 return True
 
             except:
                 logger.exception("An Error in creating BankExpenseType TABLE")
                 return False
+
+    def fetch_expense_id(self, expense_name) -> int | bool:
+        with self._cursor() as cursor:
+            cursor.execute(
+                """SELECT id FROM banks WHERE bankexpensetype = %s""", (expense_name,)
+            )
+            answer = cursor.fetchone()
+            if answer is None:
+                return False
+            return answer[0]
+
+    def add_expense(self, expense_name, ref_to=None):
+
+        if ref_to is None:
+
+            if expense_name not in self.__get_all_parent_expenses():
+                with self._cursor() as cursor:
+                    try:
+                        cursor.execute(
+                            "INSERT INTO bankexpensetype (expenseName) VALUES (%s)",
+                            (expense_name,),
+                        )
+                        logger.info(
+                            f"added {expense_name} as parent expense in bankexpensetype TABLE."
+                        )
+                        return True
+                    except UniqueViolation:
+                        return True
+
+                    except Exception:
+                        logger.exception(
+                            f"An error occurred when adding parent task of {expense_name} to the bankexpensetype TABLE."
+                        )
+                        return False
+            else:
+                return True  # The parent task already there so it is TRue
+        with self._cursor() as cursor:
+            try:
+                # ? First We Have to Fetch parent id:
+                cursor.execute(
+                    "SELECT id FROM bankexpensetype WHERE expenseName = %s;", (ref_to,)
+                )
+                parent_id = cursor.fetchone()[0]
+
+                # ? Now its time to add expense_name and with its parent_id to the TABLE.
+                cursor.execute(
+                    "INSERT INTO bankexpensetype (expenseName,parentexpenseid) VALUES(%s,%s);",
+                    (expense_name, parent_id),
+                )
+
+            except Exception:
+                logger.exception(
+                    f"There is an error in adding {expense_name} to the banks TABLE with {ref_to} as its parent."
+                )
+                return False
+
+    def __get_all_parent_expenses(self):
+
+        with self._cursor() as cursor:
+            cursor.execute(
+                "SELECT expensename FROM bankexpensetype WHERE parentexpenseid is null;"
+            )
+
+            return [i[0] for i in cursor.fetchall()]
