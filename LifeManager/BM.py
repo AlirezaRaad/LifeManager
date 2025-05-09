@@ -232,7 +232,7 @@ class CBanker(Cursor):
             try:
                 # GOAL: This Created The Table with Unique Constrain on both columns but not (expenseName,NULL)
                 cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS bankexpensetype (id SERIAL PRIMARY KEY, expenseName TEXT, parentExpenseId INTEGER,
+                    """CREATE TABLE IF NOT EXISTS bankexpensetype (id SERIAL PRIMARY KEY, expenseName TEXT UNIQUE, parentExpenseId INTEGER,
                             CONSTRAINT FK_self_parent_expense FOREIGN KEY (parentExpenseId) REFERENCES bankexpensetype(id),
                             CONSTRAINT unique_expense_rows UNIQUE(expenseName, parentExpenseId));"""
                 )
