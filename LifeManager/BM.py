@@ -35,6 +35,9 @@ class CBanker(Cursor):
             else:
                 flags.append(self.__make_banks_table())
 
+            # ? Creating bank expense type TABLE.
+            flags.append(self.create_bank_expense_type_table())
+
             # ? Check to see if banker TABLE exists or not
             cursor.execute(
                 """SELECT EXISTS (
@@ -61,14 +64,12 @@ class CBanker(Cursor):
             # GOAL: This Created The Table Banks for future foreign key.
             with self._cursor() as cursor:
                 cursor.execute(
-                    """CREATE TABLE banks (
+                    """CREATE TABLE IF NOT EXISTS banks (
                             id SERIAL PRIMARY KEY,
                             bankName TEXT UNIQUE NOT NULL
                         );"""
                 )
-
-        except DuplicateTable:
-            return True
+                return True
 
         except Exception:
             return False
@@ -77,30 +78,30 @@ class CBanker(Cursor):
         with self._cursor() as cursor:
             flag = deque()
             try:
-                # Create the banker table
-                logger.info("Creating banker table...")
+                logger.info("Creating banker TABLE...")
                 cursor.execute(
-                    """CREATE TABLE banker (
+                    """CREATE TABLE IF NOT EXISTS banker (
                             id SERIAL PRIMARY KEY,
                             bankId INTEGER,
+                            expenseType INT,
                             amount NUMERIC(11,2),
                             balance NUMERIC(11,2),
                             description TEXT,
                             CONSTRAINT FK_parent_bank FOREIGN KEY (bankId) REFERENCES banks(id),
-                            CONSTRAINT no_minus_balance CHECK (balance >= 0)
+                            CONSTRAINT no_minus_balance CHECK (balance >= 0),
+                            CONSTRAINT FK_expense_type FOREIGN KEY (expenseType) REFERENCES bankexpensetype(id)
                     );"""
                 )
                 flag.append(True)
-            except DuplicateTable:
-                flag.append(True)  # Table already exists
-            except Exception as e:
-                logger.exception("Error creating banker table:")
+
+            except Exception:
+                logger.exception("Error in creating banker table:")
                 cursor.connection.rollback()  # Roll back transaction
                 flag.append(False)
 
             try:
-                # Create the trigger function
-                logger.info("Creating trigger function...")
+
+                logger.info("Creating trigger function for banker TABLE...")
                 cursor.execute(
                     """
                     CREATE OR REPLACE FUNCTION change_balance_on_insert()
@@ -127,13 +128,15 @@ class CBanker(Cursor):
             except DuplicateFunction:
                 flag.append(True)  # Function already exists, proceed
             except Exception as e:
-                logger.exception("Error creating banker trigger function: ")
+                logger.exception(
+                    "Error creating banker trigger function for banker TABLE: "
+                )
                 cursor.connection.rollback()  # Roll back transaction
                 flag.append(False)
 
             try:
                 # Create the trigger
-                logger.info("Creating trigger...")
+                logger.info("Creating trigger for banker TABLE...")
                 cursor.execute(
                     """
                     CREATE OR REPLACE TRIGGER change_balance_on_insert_trigger
@@ -145,26 +148,27 @@ class CBanker(Cursor):
                 )
                 flag.append(True)
             except Exception as e:
-                logger.exception("Error creating banker trigger: ")
-                cursor.connection.rollback()  # Roll back transaction
+                logger.exception("Error creating a trigger for banker : ")
+                cursor.connection.rollback()
                 flag.append(False)
 
-            # Log the flag status
-            logger.info(f"Flag list after operations: {list(flag)}")
-
-            # Commit the transaction if all steps succeed
             try:
-                logger.info("Committing transaction...")
+                logger.info(
+                    "Committing transaction on making banker TABLE,FUNCTION,TRIGGER..."
+                )
                 cursor.connection.commit()
             except Exception as e:
-                logger.exception("Error committing transaction: ")
-                cursor.connection.rollback()  # Roll back transaction in case of failure
+                logger.exception(
+                    "Error committing transaction on making banker TABLE,FUNCTION,TRIGGER: "
+                )
+                cursor.connection.rollback()
                 return False
 
-            # Return the result based on the flags
             result = all(flag)
             if not result:
-                logger.info("One or more operations failed. Returning False.")
+                logger.info(
+                    "One or more operations failed in making banker TABLE,FUNCTION,TRIGGER! Returning False."
+                )
             return result
 
     def __fetch_bank_id(self, bank_name) -> int | bool:
@@ -213,4 +217,17 @@ class CBanker(Cursor):
             except CheckViolation:
                 #! NEGATIVE balance.
                 logger.exception("The Balance was about to get NEGATIVE.")
+                return False
+
+    def create_bank_expense_type_table(self):
+
+        with self._cursor() as cursor:
+            try:
+                cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS BankExpenseType (id SERIAL PRIMARY KEY, name TEXT);"
+                )
+                return True
+
+            except:
+                logger.exception("An Error in creating BankExpenseType TABLE")
                 return False
