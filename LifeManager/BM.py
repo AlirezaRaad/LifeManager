@@ -382,15 +382,17 @@ class CBanker(Cursor):
                 )
                 plt.legend()
                 plt.title(
-                    f"What % You Spend on What in {mapping_banks[_id]}",
+                    f"What % You Spend on What in {mapping_banks[_id]} in last {last_x_days} days.",
                     fontsize=20,
                     fontweight="bold",
                 )
                 plt.savefig(fname=f"figures/bank_{mapping_banks[_id]}")
                 logger.info(
-                    f"PIE chart created successfully for {mapping_banks[_id]} BANK."
+                    f"PIE chart created successfully for {mapping_banks[_id]} BANK in last {last_x_days} days."
                 )
             return True
         except:
-            logger.exception(f"An error in making {mapping_banks[_id]} PIE CHART.")
+            logger.exception(
+                f"An error in making {mapping_banks[_id]} PIE CHART in last {last_x_days} days."
+            )
             return False
