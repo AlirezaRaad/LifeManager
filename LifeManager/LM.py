@@ -21,7 +21,6 @@ from psycopg2.errors import (
     UndefinedTable,
     UniqueViolation,
 )
-from psycopg2.pool import SimpleConnectionPool
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError
 

@@ -1,11 +1,9 @@
 from collections import deque
 
-from psycopg2.errors import (
-    CheckViolation,
-    DuplicateFunction,
-    DuplicateTable,
-    UniqueViolation,
-)
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib import colormaps
+from psycopg2.errors import CheckViolation, DuplicateFunction, UniqueViolation
 
 from .Cursor import Cursor
 from .logger_config import logger
@@ -86,6 +84,7 @@ class CBanker(Cursor):
                             expenseType INT,
                             amount NUMERIC(11,2),
                             balance NUMERIC(11,2),
+                            dateTime DEFAULT CURRENT_TIMESTAMP,
                             description TEXT,
                             CONSTRAINT FK_parent_bank FOREIGN KEY (bankId) REFERENCES banks(id),
                             CONSTRAINT no_minus_balance CHECK (balance >= 0),
@@ -205,8 +204,8 @@ class CBanker(Cursor):
         expense_type: int,
         description: str | None = None,
     ):
-        # expense_id =
-
+        expense_id = self.fetch_expense_id(expense_name=expense_type)
+        print(expense_id)
         bank_id = self.__fetch_bank_id(bank_name=bank_name)
         if not bank_id:
             logger.error(f"{bank_name} doesn't exists in the banks TABLE")
@@ -248,7 +247,8 @@ class CBanker(Cursor):
     def fetch_expense_id(self, expense_name) -> int | bool:
         with self._cursor() as cursor:
             cursor.execute(
-                """SELECT id FROM banks WHERE bankexpensetype = %s""", (expense_name,)
+                """SELECT id FROM bankexpensetype WHERE expensename = %s""",
+                (expense_name,),
             )
             answer = cursor.fetchone()
             if answer is None:
@@ -300,7 +300,7 @@ class CBanker(Cursor):
                 )
                 return False
 
-    def __get_all_parent_expenses(self):
+    def __get_all_parent_expenses(self) -> list:
 
         with self._cursor() as cursor:
             cursor.execute(
