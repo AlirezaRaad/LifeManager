@@ -1,9 +1,11 @@
+import os
 from collections import deque
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import colormaps
 from psycopg2.errors import CheckViolation, DuplicateFunction, UniqueViolation
+from sqlalchemy import create_engine
 
 from .Cursor import Cursor
 from .logger_config import logger
@@ -313,4 +315,75 @@ class CBanker(Cursor):
             return [i[0] for i in cursor.fetchall()]
 
     def chart_it(self):
-        pass
+        with self._cursor() as cursor:
+            cursor.execute("SELECT *  FROM bankexpensetype")
+            _ = cursor.fetchall()
+
+        mapping_idx = {i[0]: i[1] for i in _}
+
+        engin = create_engine(
+            f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+            pool_size=10,
+        )
+
+        query = """SELeCT br.bankid,b.bankname, br.expensetype, bet.expensename, bet.parentexpenseid, 
+                    br.amount,  br.balance, br.datetime, br.description  
+                    FROM banker br JOIN banks b ON br.bankid = b.id JOIN bankexpensetype bet ON bet.id = br.expensetype;"""
+
+        df = pd.read_sql(query, engin)
+
+        # ~ Now lets make mapping dict for showing bank name.
+        try:
+            with self._cursor() as cursor:
+                cursor.execute("SELECT *  FROM banks")
+                _ = cursor.fetchall()
+
+            mapping_banks = {i[0]: i[1] for i in _}
+        except:
+            logger.exception(f"An Error in creating mapping object for banks.")
+            return False
+        try:
+            # ~ Now lets make mapping dict for showing expense name.
+            with self._cursor() as cursor:
+                cursor.execute("SELECT *  FROM bankexpensetype")
+                _ = cursor.fetchall()
+
+            mapping_idx = {i[0]: i[1] for i in _}
+        except:
+            logger.exception(f"An Error in creating mapping object for banks.")
+            return False
+
+        # ~ Now lets make the pie chart
+        try:
+            for _id in df["bankid"].unique():  #! Iterate of each bank.
+
+                filtered_df = df[df["bankid"] == _id]
+                data = filtered_df.groupby(df["parentexpenseid"])["amount"].sum()
+
+                num_colors = df["parentexpenseid"].nunique()
+                cmap = colormaps.get_cmap(cmap="Set3")
+                colors = [cmap(i / num_colors) for i in range(num_colors)]
+
+                plt.figure(figsize=(20, 10))
+                plt.pie(
+                    x=data,
+                    labels=data.index.map(mapping_idx),
+                    autopct="%1.2f%%",
+                    startangle=90,
+                    colors=colors,
+                    textprops={"fontweight": "bold"},
+                )
+                plt.legend()
+                plt.title(
+                    f"What % You Spend on What in {mapping_banks[_id]}",
+                    fontsize=20,
+                    fontweight="bold",
+                )
+                plt.savefig(fname=f"figures/bank_{mapping_banks[_id]}")
+                logger.info(
+                    f"PIE chart created successfully for {mapping_banks[_id]} BANK."
+                )
+            return True
+        except:
+            logger.exception(f"An error in making {mapping_banks[_id]} PIE CHART.")
+            return False
