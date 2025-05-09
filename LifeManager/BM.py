@@ -84,7 +84,7 @@ class CBanker(Cursor):
                             expenseType INT,
                             amount NUMERIC(11,2),
                             balance NUMERIC(11,2),
-                            dateTime DEFAULT CURRENT_TIMESTAMP,
+                            dateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             description TEXT,
                             CONSTRAINT FK_parent_bank FOREIGN KEY (bankId) REFERENCES banks(id),
                             CONSTRAINT no_minus_balance CHECK (balance >= 0),
@@ -205,7 +205,10 @@ class CBanker(Cursor):
         description: str | None = None,
     ):
         expense_id = self.fetch_expense_id(expense_name=expense_type)
-        print(expense_id)
+        if not expense_id:
+            logger.error(f"an error with fetching {expense_type} from DataBase.")
+            return False
+
         bank_id = self.__fetch_bank_id(bank_name=bank_name)
         if not bank_id:
             logger.error(f"{bank_name} doesn't exists in the banks TABLE")
@@ -214,8 +217,8 @@ class CBanker(Cursor):
         with self._cursor() as cursor:
             try:
                 cursor.execute(
-                    """INSERT INTO banker (bankid, amount, description) VALUES (%s,%s,%s)""",
-                    (bank_id, amount, description),
+                    """INSERT INTO banker (bankid, amount, description, expenseType) VALUES (%s,%s,%s,%s)""",
+                    (bank_id, amount, description, expense_id),
                 )
                 return True
             except CheckViolation:
@@ -229,14 +232,14 @@ class CBanker(Cursor):
             try:
                 # GOAL: This Created The Table with Unique Constrain on both columns but not (expenseName,NULL)
                 cursor.execute(
-                    """CREATE TABLE bankexpensetype (id SERIAL PRIMARY KEY, expenseName TEXT, parentExpenseId INTEGER,
+                    """CREATE TABLE IF NOT EXISTS bankexpensetype (id SERIAL PRIMARY KEY, expenseName TEXT, parentExpenseId INTEGER,
                             CONSTRAINT FK_self_parent_expense FOREIGN KEY (parentExpenseId) REFERENCES bankexpensetype(id),
                             CONSTRAINT unique_expense_rows UNIQUE(expenseName, parentExpenseId));"""
                 )
 
                 # GOAL: Now I manually made (expenseName,NULL) a UNIQUE.
                 cursor.execute(
-                    """CREATE UNIQUE INDEX unique_null_parent_expense ON bankexpensetype(expenseName) WHERE parentExpenseId IS NULL;"""
+                    """CREATE UNIQUE INDEX IF NOT EXISTS unique_null_parent_expense ON bankexpensetype(expenseName) WHERE parentExpenseId IS NULL;"""
                 )
                 return True
 
