@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 from collections import deque
 
@@ -314,7 +315,7 @@ class CBanker(Cursor):
 
             return [i[0] for i in cursor.fetchall()]
 
-    def chart_it(self):
+    def chart_it(self, last_x_days: int = 30):
         with self._cursor() as cursor:
             cursor.execute("SELECT *  FROM bankexpensetype")
             _ = cursor.fetchall()
@@ -331,6 +332,12 @@ class CBanker(Cursor):
                     FROM banker br JOIN banks b ON br.bankid = b.id JOIN bankexpensetype bet ON bet.id = br.expensetype;"""
 
         df = pd.read_sql(query, engin)
+
+        # ~ Nows slcice the dataFrame of the last x days.
+
+        df = df[
+            df["datetime"] > (dt.datetime.now() - dt.timedelta(days=int(last_x_days)))
+        ]
 
         # ~ Now lets make mapping dict for showing bank name.
         try:
