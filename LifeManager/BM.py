@@ -36,7 +36,7 @@ class CBanker(Cursor):
                 flags.append(self.__make_banks_table())
 
             # ? Creating bank expense type TABLE.
-            flags.append(self.create_bank_expense_type_table())
+            flags.append(self.__create_bank_expense_type_table())
 
             # ? Check to see if banker TABLE exists or not
             cursor.execute(
@@ -219,7 +219,7 @@ class CBanker(Cursor):
                 logger.exception("The Balance was about to get NEGATIVE.")
                 return False
 
-    def create_bank_expense_type_table(self):
+    def __create_bank_expense_type_table(self):
 
         with self._cursor() as cursor:
             try:
