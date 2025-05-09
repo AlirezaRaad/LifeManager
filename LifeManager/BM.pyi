@@ -70,3 +70,42 @@ class CBanker:
             bool: True if transaction succeeded, otherwise False.
         """
         ...
+
+    def __create_bank_expense_type_table(self):
+        """
+        Makes bankexpensetype(Bank Expense Type) TABLE.
+        """
+        ...
+
+    def fetch_expense_id(self, expense_name: str) -> int | bool:
+        """Fetch the expense id from the bankexpensetype TABLE if its exists.
+
+        Args:
+            expense_name (str): Expense name to fetch its id.
+
+        Returns:
+            int | bool: Returns the id of said expense name, otherwise False.
+        """
+        ...
+
+    def add_expense(self, expense_name: str, ref_to=None) -> bool:
+        """Adds a expense to bankexpensetype TABLE.
+        NOTE: If the ref_to is None, it creates a parent expense.
+
+
+        Args:
+            expense_name (str): The expense name that you want to add.
+            ref_to (str, optional): The Parent Expense that you want to add expense_name under it . Defaults to None.
+
+        Returns:
+            bool: Returns True if expense, added successfully, otherwise False.
+        """
+        ...
+
+    def __get_all_parent_expenses(self) -> list:
+        """Returns all the parent expense in a list.
+
+        Returns:
+            list: list of parent expense.
+        """
+        ...

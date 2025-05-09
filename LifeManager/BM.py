@@ -255,7 +255,7 @@ class CBanker(Cursor):
                 return False
             return answer[0]
 
-    def add_expense(self, expense_name, ref_to=None):
+    def add_expense(self, expense_name, ref_to=None) -> bool:
 
         if ref_to is None:
 
@@ -293,7 +293,7 @@ class CBanker(Cursor):
                     "INSERT INTO bankexpensetype (expenseName,parentexpenseid) VALUES(%s,%s);",
                     (expense_name, parent_id),
                 )
-
+                return True
             except Exception:
                 logger.exception(
                     f"There is an error in adding {expense_name} to the banks TABLE with {ref_to} as its parent."
@@ -308,3 +308,6 @@ class CBanker(Cursor):
             )
 
             return [i[0] for i in cursor.fetchall()]
+
+    def chart_it(self):
+        pass
