@@ -91,8 +91,11 @@ def timer_keyboard():
 
     builder = InlineKeyboardBuilder()
 
-    builder.button(text="Start/End Timer", callback_data="se_timer")
-    builder.button(text="Pause/Resume Timer", callback_data="pr_timer")
+    builder.button(text="Start Timer", callback_data="s_timer")
+    builder.button(text="End Timer", callback_data="s_timer")
+    builder.button(text="Pause Timer", callback_data="p_timer")
+    builder.button(text="Resume Timer", callback_data="r_timer")
+    builder.button(text="Active Timers", callback_data="active_timer")
     builder.button(text="Return", callback_data="daily_task_manager")
 
     builder.adjust(1)
@@ -107,22 +110,53 @@ async def _timer(call: types.CallbackQuery):
 
     await call.message.delete()
     await call.message.answer(
-        text="What do you want to do?: ", reply_markup=timer_keyboard()
+        text="What do you want to do ?: ", reply_markup=timer_keyboard()
     )
 
 
-@dp.callback_query(F.data == "se_timer")
-async def start_end_timer(call: types.CallbackQuery):
+@dp.callback_query(F.data == "s_timer")
+async def start_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
+    await call.message.delete()
+
+    await call.message.answer(text="What do you want to do ?: ")
 
 
-@dp.callback_query(F.data == "pr_timer")
-async def pause_resume_timer(call: types.CallbackQuery):
+@dp.callback_query(F.data == "e_timer")
+async def end_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
+    await call.message.delete()
+    tm = lm.timer()
+    await call.message.answer(text="What do you want to do ?: ")
+
+
+@dp.callback_query(F.data == "p_timer")
+async def pause_timer(call: types.CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+    await call.message.delete()
+    tm = lm.timer()
+    await call.message.answer(text="What do you want to do ?: ")
+
+
+@dp.callback_query(F.data == "r_timer")
+async def resume_timer(call: types.CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+    await call.message.delete()
+    tm = lm.timer()
+    await call.message.answer(text="What do you want to do ?: ")
+
+
+@dp.callback_query(F.data == "active_timer")
+async def active_timer_(call: types.CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+    await call.message.delete()
+    tm = lm.timer()
+    await call.message.answer(text="What do you want to do ?: ")
 
 
 # ~ -----------END |  Timer section ---------------

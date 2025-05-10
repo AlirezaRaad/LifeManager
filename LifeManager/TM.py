@@ -51,6 +51,8 @@ class CTimer:
         try:
             if not self.__start:
                 raise ValueError("Object does not have any start attribute.")
+            if self.__pause is not None:
+                self.resume()
 
             end_time = self.__end or dt.datetime.now()
             return (
