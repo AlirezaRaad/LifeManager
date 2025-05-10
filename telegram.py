@@ -13,8 +13,11 @@ dp = Dispatcher()
 
 admins = [7860498898, 6739019257]
 from LifeManager.LM import LifeManager
+from LifeManager.logger_config import logger
+from LifeManager.TM import CTimer
 
 lm = LifeManager()
+tm = CTimer()
 
 
 def is_admin(id) -> bool:
@@ -92,10 +95,10 @@ def timer_keyboard():
     builder = InlineKeyboardBuilder()
 
     builder.button(text="Start Timer", callback_data="s_timer")
-    builder.button(text="End Timer", callback_data="s_timer")
+    builder.button(text="End Timer", callback_data="e_timer")
     builder.button(text="Pause Timer", callback_data="p_timer")
     builder.button(text="Resume Timer", callback_data="r_timer")
-    builder.button(text="Active Timers", callback_data="active_timer")
+
     builder.button(text="Return", callback_data="daily_task_manager")
 
     builder.adjust(1)
@@ -110,7 +113,9 @@ async def _timer(call: types.CallbackQuery):
 
     await call.message.delete()
     await call.message.answer(
-        text="What do you want to do ?: ", reply_markup=timer_keyboard()
+        text="<b>NOTE: Starting New timer will overwrite the old time</b>",
+        reply_markup=timer_keyboard(),
+        parse_mode="HTML",
     )
 
 
@@ -118,45 +123,72 @@ async def _timer(call: types.CallbackQuery):
 async def start_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    await call.message.delete()
 
-    await call.message.answer(text="What do you want to do ?: ")
+    global timer_instance
+    try:
+        _ = lm.timer()  # Return a UUID that can be accessed later to make the class
+
+        timer_instance = tm.get_instance(_)
+        timer_instance.start()
+
+        await call.message.answer(
+            text="Your Time Has Been <b>Started</b>!",
+            parse_mode="HTML",
+        )
+    except:
+        await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
+        logger.exception("Cannot Start Timer in TelegramBOT.")
 
 
 @dp.callback_query(F.data == "e_timer")
 async def end_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    await call.message.delete()
-    tm = lm.timer()
-    await call.message.answer(text="What do you want to do ?: ")
+    global timer_instance
+    try:
+
+        await call.message.answer(
+            text=f"You Timer Has Been <b>Ended</b> Successfully.\nYou'r Time: {timer_instance.time_it()} Seconds.",
+            parse_mode="HTML",
+        )
+        del CTimer._instances[timer_instance.get_uid()]  #! Delete the instance
+    except:
+        await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
+        logger.exception("Cannot End Timer in TelegramBOT.")
 
 
 @dp.callback_query(F.data == "p_timer")
 async def pause_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    await call.message.delete()
-    tm = lm.timer()
-    await call.message.answer(text="What do you want to do ?: ")
+    global timer_instance
+    try:
+        timer_instance.pause()
+        await call.message.answer(
+            text=f"You Timer Has Been <b>Paused</b> Successfully.",
+            parse_mode="HTML",
+        )
+
+    except:
+        await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
+        logger.exception("Cannot Pause Timer in TelegramBOT.")
 
 
 @dp.callback_query(F.data == "r_timer")
 async def resume_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    await call.message.delete()
-    tm = lm.timer()
-    await call.message.answer(text="What do you want to do ?: ")
+    global timer_instance
+    try:
+        timer_instance.resume()
+        await call.message.answer(
+            text=f"You Timer Has Been <b>Resumed</b> Successfully.",
+            parse_mode="HTML",
+        )
 
-
-@dp.callback_query(F.data == "active_timer")
-async def active_timer_(call: types.CallbackQuery):
-    if not is_admin(call.from_user.id):
-        return
-    await call.message.delete()
-    tm = lm.timer()
-    await call.message.answer(text="What do you want to do ?: ")
+    except:
+        await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
+        logger.exception("Cannot Resume Timer in TelegramBOT.")
 
 
 # ~ -----------END |  Timer section ---------------
