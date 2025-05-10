@@ -43,7 +43,6 @@ class CTimer:
 
         Raises:
             ValueError: It raises when you dont initiate start Method.
-            ValueError: It raises when you dont initiate end Method.
 
         Returns:
             float | bool: Return the seconds in float; Or returns False if any exceptions happens; check logs.
