@@ -100,6 +100,10 @@ async def dmt(call):
 
 
 # ~ -----------START |  Timer section ---------------
+class TheTimerSection(StatesGroup):
+    already_elapsed = State()
+
+
 def timer_keyboard():
 
     builder = InlineKeyboardBuilder()
@@ -150,14 +154,17 @@ async def start_timer(call: types.CallbackQuery):
 
 
 @dp.callback_query(F.data == "e_timer")
-async def end_timer(call: types.CallbackQuery):
+async def end_timer(call: types.CallbackQuery, state: FSMContext):
+
     await call.answer()
     if not is_admin(call.from_user.id):
         return
+    global user_time_elapsed
 
     try:
-        global user_time_elapsed
+
         user_time_elapsed = tm.time_it()
+
         if not user_time_elapsed:
             await call.message.answer(
                 text=f"You Need To First, <b>Start</b> the timer.",
@@ -170,6 +177,24 @@ async def end_timer(call: types.CallbackQuery):
             parse_mode="HTML",
         )
 
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="Yes", callback_data="timer_yes"),
+                    InlineKeyboardButton(text="No", callback_data="timer_no"),
+                ],
+            ]
+        )
+
+        await call.message.answer(
+            text=f"""<b>Note:</b> You can only store one time at a time. 
+If you choose to store, it will replace the previous saved time.\n\n
+<i>Please select an option below to proceed:</i>""",
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+
+        await state.set_state(TheTimerSection.already_elapsed)
     except:
         await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
         logger.exception("Cannot End Timer in TelegramBOT.")
@@ -214,6 +239,18 @@ async def resume_timer(call: types.CallbackQuery):
             parse_mode="HTML",
         )
         logger.exception("Cannot Resume Timer in TelegramBOT.")
+
+
+@dp.callback_query(TheTimerSection.already_elapsed)
+async def wanna_use_time(call: types.CallbackQuery):
+
+    response = call.data
+    if response == "timer_yes":
+        global user_duration
+        user_duration = user_time_elapsed
+        await call.answer(f"✅ Confirmed {user_duration}✅")
+
+    await call.answer(f"❌ Didn't Select {user_duration}❌")
 
 
 # ~ -----------END |  Timer section ---------------
