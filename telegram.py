@@ -38,6 +38,7 @@ def __keyboard():
 
     builder.button(text="DTM", callback_data="daily_task_manager")
     builder.button(text="Banking", callback_data="banking")
+    builder.button(text="Chartings", callback_data="charting")
 
     builder.adjust(1)
 
@@ -237,12 +238,14 @@ async def add_daily_task(call: types.CallbackQuery, state: FSMContext):
 
 @dp.message(TasksState.adding_daily_tasks)
 async def process_adding_daily_tasks_state(message: Message, state: FSMContext):
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="👨 Parent", callback_data="parent_task")],
-            [InlineKeyboardButton(text="👶 Child", callback_data="child_task")],
-        ]
-    )
+
+    builder = InlineKeyboardBuilder()
+
+    builder.button(text="👨 Parent", callback_data="parent_task")
+    builder.button(text="👶 Child", callback_data="child_task")
+    builder.button(text="❌ Abort", callback_data="abort")
+    builder.adjust(2)
+    keyboard = builder.as_markup()
 
     await message.answer(
         f"""Do you want to add the `<b>{message.text}</b>` as an parent task or a child task?\n
@@ -256,8 +259,11 @@ The Parent/Chile relation comes back at YOUR PERSPECTIVE of the subject.""",
 
 
 @dp.callback_query(TasksState.parent_or_child)
-async def process_paren_or_child_state(call: types.CallbackQuery, state: FSMContext):
+async def process_parent_or_child_state(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
+    if call.data == "abort":
+        return await process_abort(call, state)  # Directly call the abort handler
+
     await state.update_data(
         parent_or_child=call.data
     )  # User Choice parent or child wil be store here
@@ -279,12 +285,14 @@ async def process_paren_or_child_state(call: types.CallbackQuery, state: FSMCont
 
     if task_type == "child_task":
         all_parents = lm.get_all_parent_tasks()
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text=i, callback_data=f"parent_{i}")]
-                for i in all_parents
-            ]
-        )
+        builder = InlineKeyboardBuilder()
+        for i in all_parents:
+            builder.button(text=i, callback_data=f"parent_{i}")
+
+        builder.button(text="❌ Abort", callback_data="abort")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
+
         await call.message.answer(
             "Please Choose Your Desired Parent Task:", reply_markup=keyboard
         )
@@ -294,6 +302,9 @@ async def process_paren_or_child_state(call: types.CallbackQuery, state: FSMCont
 
 @dp.callback_query(TasksState.which_parent)
 async def process_which_parent_state(call: types.CallbackQuery, state: FSMContext):
+    if call.data == "abort":
+        return await process_abort(call, state)  # Directly call the abort handler
+
     await call.answer()
 
     await state.update_data(which_parent=call.data)
@@ -305,12 +316,29 @@ async def process_which_parent_state(call: types.CallbackQuery, state: FSMContex
         await call.message.answer(
             text=f"✅ The {task_name} Has Been Added Successfully to the database with {parent_name} as its Parent."
         )
+        await state.clear()  # Clear FSM  state
         return
     else:
         await call.message.answer(
             text=f"❌ There Was An Error Wile Adding {task_name} to the database with {parent_name} as its Parent.\nHINT: Maybe the Parent Doesn't Exists."
         )
+        await state.clear()  # Clear FSM state
         return
+
+
+@dp.callback_query(lambda x: x.data == "abort")
+async def process_abort(call: types.CallbackQuery, state: FSMContext):
+    await call.answer("Operation cancelled ❌", show_alert=True)
+    await state.clear()  # Clear FSM state
+
+    try:  #! Delete the message only if it was sent by the bot
+
+        if call.message.from_user.id == call.bot.id:
+            await call.message.delete()
+    except:
+        logger.exception(
+            "an error while deleting the message in telegram.py's process_abort callback_query handler."
+        )
 
 
 # * -------END | add_daily_task query handler ---------
