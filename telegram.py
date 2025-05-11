@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 from aiogram import Bot, Dispatcher
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -100,8 +101,6 @@ async def dmt(call):
 
 
 # ~ -----------START |  Timer section ---------------
-class TheTimerSection(StatesGroup):
-    already_elapsed = State()
 
 
 def timer_keyboard():
@@ -154,7 +153,7 @@ async def start_timer(call: types.CallbackQuery):
 
 
 @dp.callback_query(F.data == "e_timer")
-async def end_timer(call: types.CallbackQuery, state: FSMContext):
+async def end_timer(call: types.CallbackQuery):
 
     await call.answer()
     if not is_admin(call.from_user.id):
@@ -183,6 +182,7 @@ async def end_timer(call: types.CallbackQuery, state: FSMContext):
                     InlineKeyboardButton(text="Yes", callback_data="timer_yes"),
                     InlineKeyboardButton(text="No", callback_data="timer_no"),
                 ],
+                [InlineKeyboardButton(text="Return", callback_data="timer")],
             ]
         )
 
@@ -194,7 +194,6 @@ If you choose to store, it will replace the previous saved time.\n\n
             reply_markup=keyboard,
         )
 
-        await state.set_state(TheTimerSection.already_elapsed)
     except:
         await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
         logger.exception("Cannot End Timer in TelegramBOT.")
@@ -241,16 +240,23 @@ async def resume_timer(call: types.CallbackQuery):
         logger.exception("Cannot Resume Timer in TelegramBOT.")
 
 
-@dp.callback_query(TheTimerSection.already_elapsed)
+@dp.callback_query(lambda x: x.data.startswith("timer_"))
 async def wanna_use_time(call: types.CallbackQuery):
+    response = call.data[6:]
 
-    response = call.data
-    if response == "timer_yes":
-        global user_duration
-        user_duration = user_time_elapsed
-        await call.answer(f"✅ Confirmed {user_duration}✅")
+    global user_duration  # $ For Using in the Inserting into table
+    user_duration = user_time_elapsed
 
-    await call.answer(f"❌ Didn't Select {user_duration}❌")
+    if response == "yes":
+        await call.answer(f"✅ Selected {user_duration} ✅")
+    else:
+        await call.answer(f"❌ Ignored {user_duration} ❌")
+
+    await _timer(call)
+    try:
+        await call.message.delete()
+    except TelegramBadRequest:
+        pass  # ! This Means The message is Already deleted
 
 
 # ~ -----------END |  Timer section ---------------
@@ -389,8 +395,8 @@ async def insert_into_weekly_tables(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
     try:
-        if not user_time_elapsed:
-            raise NameError  # if user uses two END TIMER back to back, the user_time_elapsed will be false.
+        if not user_duration:
+            raise NameError
     except NameError:
         await call.answer(
             f"First start the TIMER, to capture the duration for your work.",
