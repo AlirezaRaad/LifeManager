@@ -260,10 +260,10 @@ The Parent/Chile relation comes back at YOUR PERSPECTIVE of the subject.""",
 
 @dp.callback_query(TasksState.parent_or_child)
 async def process_parent_or_child_state(call: types.CallbackQuery, state: FSMContext):
-    await call.answer()
+
     if call.data == "abort":
         return await process_abort(call, state)  # Directly call the abort handler
-
+    await call.answer()
     await state.update_data(
         parent_or_child=call.data
     )  # User Choice parent or child wil be store here
@@ -342,6 +342,34 @@ async def process_abort(call: types.CallbackQuery, state: FSMContext):
 
 
 # * -------END | add_daily_task query handler ---------
+# $-------START | INSERT INTO WEEKLY TABLE ------
+class InsertingIntoTABLE(StatesGroup):
+    pass
+
+
+@dp.callback_query(F.data == "insert_into_weekly_table")
+async def insert_into_weekly_tables(call: types.CallbackQuery):
+    if not is_admin(call.from_user.id):
+        return
+    try:
+        if not user_time_elapsed:
+            raise NameError  # if user uses two END TIMER back to back, the user_time_elapsed will be false.
+    except NameError:
+        await call.answer(
+            f"First start the TIMER, to capture the duration for your work.",
+            show_alert=True,
+        )
+        return
+    except:
+        logger.exception(
+            "an Exception inside telegram.py module in insert_into_weekly_tables callback query handler."
+        )
+        return
+
+    await call.answer()
+
+
+# $-------END | INSERT INTO WEEKLY TABLE ------
 @dp.callback_query(F.data == "get_all_parent_tasks")
 async def _get_all_parent_tasks(call: types.CallbackQuery):
     await call.answer()
@@ -367,13 +395,6 @@ async def show_all_tables(call: types.CallbackQuery):
     text = "🚨 Available <b>TABLES</b>\n\n" + "".join(_)
 
     await call.message.answer(text=text, parse_mode="HTML")
-
-
-@dp.callback_query(F.data == "insert_into_weekly_table")
-async def insert_into_weekly_tables(call: types.CallbackQuery):
-    await call.answer()
-    if not is_admin(call.from_user.id):
-        return
 
 
 #! ------------END | TASKS -------------------
