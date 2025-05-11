@@ -57,6 +57,7 @@ async def main_panel(msg):
 
 @dp.callback_query(F.data == "/panel")
 async def main_panel_callback(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -89,6 +90,7 @@ def main_dmt_keyboard():
 
 @dp.callback_query(F.data == "daily_task_manager")
 async def dmt(call):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -115,6 +117,7 @@ def timer_keyboard():
 
 @dp.callback_query(F.data == "timer")
 async def _timer(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -128,6 +131,7 @@ async def _timer(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "s_timer")
 async def start_timer(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -146,6 +150,7 @@ async def start_timer(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "e_timer")
 async def end_timer(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -171,6 +176,7 @@ async def end_timer(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "p_timer")
 async def pause_timer(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
     try:
@@ -190,6 +196,7 @@ async def pause_timer(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "r_timer")
 async def resume_timer(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -309,6 +316,7 @@ async def process_which_parent_state(call: types.CallbackQuery, state: FSMContex
 # * -------END | add_daily_task query handler ---------
 @dp.callback_query(F.data == "get_all_parent_tasks")
 async def _get_all_parent_tasks(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
     parents = lm.get_all_parent_tasks()
@@ -321,6 +329,7 @@ async def _get_all_parent_tasks(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "show_all_tables")
 async def show_all_tables(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -334,6 +343,7 @@ async def show_all_tables(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "insert_into_weekly_table")
 async def insert_into_weekly_tables(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
 
@@ -342,6 +352,7 @@ async def insert_into_weekly_tables(call: types.CallbackQuery):
 # ? ------------START | BACKUP -------------------
 @dp.callback_query(F.data == "backup")
 async def __backup(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
     print(call.data)
@@ -349,6 +360,7 @@ async def __backup(call: types.CallbackQuery):
 
 @dp.callback_query(F.data == "restore_backup")
 async def __restore_backup(call: types.CallbackQuery):
+    await call.answer()
     if not is_admin(call.from_user.id):
         return
     print(call.data)
