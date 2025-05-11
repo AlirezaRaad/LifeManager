@@ -49,16 +49,19 @@ class CTimer:
         """
         try:
             if not self.__start:
-                raise ValueError("Object does not have any start attribute.")
+                raise ValueError(
+                    f"Object CTimer with UUID of `{self.uid}` does not have any start attribute."
+                )
             if self.__pause is not None:
                 self.resume()
 
             end_time = self.__end or dt.datetime.now()
-            return (
-                end_time - self.__start - self.__total_pause_duration
-            ).total_seconds()
+            _ = (end_time - self.__start - self.__total_pause_duration).total_seconds()
+
+            self.__start = None
+            return _
         except Exception:
-            logger.exception("In time method: ")
+            logger.exception("In CTimer time_it method: ")
             return False
 
     def start(self) -> None:

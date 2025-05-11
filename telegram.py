@@ -124,15 +124,12 @@ async def start_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
 
-    global timer_instance
     try:
-        _ = lm.timer()  # Return a UUID that can be accessed later to make the class
 
-        timer_instance = tm.get_instance(_)
-        timer_instance.start()
+        tm.start()
 
         await call.message.answer(
-            text="Your Time Has Been <b>Started</b>!",
+            text="⏰ Your Time Has Been <b>Started</b>!",
             parse_mode="HTML",
         )
     except:
@@ -144,14 +141,22 @@ async def start_timer(call: types.CallbackQuery):
 async def end_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    global timer_instance
+
     try:
+        global user_time_elapsed
+        user_time_elapsed = tm.time_it()
+        if not user_time_elapsed:
+            await call.message.answer(
+                text=f"You Need To First, <b>Start</b> the timer.",
+                parse_mode="HTML",
+            )
+            return
 
         await call.message.answer(
-            text=f"You Timer Has Been <b>Ended</b> Successfully.\nYou'r Time: {timer_instance.time_it()} Seconds.",
+            text=f"⏰ You Timer Has Been <b>Ended</b> Successfully.\nYou'r Time: {user_time_elapsed} Seconds.",
             parse_mode="HTML",
         )
-        del CTimer._instances[timer_instance.get_uid()]  #! Delete the instance
+
     except:
         await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
         logger.exception("Cannot End Timer in TelegramBOT.")
@@ -161,16 +166,18 @@ async def end_timer(call: types.CallbackQuery):
 async def pause_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    global timer_instance
     try:
-        timer_instance.pause()
+        tm.pause()
         await call.message.answer(
-            text=f"You Timer Has Been <b>Paused</b> Successfully.",
+            text=f"⏰ You Timer Has Been <b>Paused</b> Successfully.",
             parse_mode="HTML",
         )
 
     except:
-        await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
+        await call.message.answer(
+            text=f"You Need To First, <b>Start</b> the timer.",
+            parse_mode="HTML",
+        )
         logger.exception("Cannot Pause Timer in TelegramBOT.")
 
 
@@ -178,16 +185,19 @@ async def pause_timer(call: types.CallbackQuery):
 async def resume_timer(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    global timer_instance
+
     try:
-        timer_instance.resume()
+        tm.resume()
         await call.message.answer(
-            text=f"You Timer Has Been <b>Resumed</b> Successfully.",
+            text=f"⏰ You Timer Has Been <b>Resumed</b> Successfully.",
             parse_mode="HTML",
         )
 
     except:
-        await call.message.answer(text="An Error HasBeen occurred. Read Log Files")
+        await call.message.answer(
+            text=f"You Need To First, <b>Start</b> the timer.",
+            parse_mode="HTML",
+        )
         logger.exception("Cannot Resume Timer in TelegramBOT.")
 
 
