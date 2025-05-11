@@ -9,13 +9,19 @@ from aiogram import Bot, Dispatcher
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
-dp = Dispatcher()
+
 
 admins = [7860498898, 6739019257]
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+
 from LifeManager.LM import LifeManager
 from LifeManager.logger_config import logger
 from LifeManager.TM import CTimer
 
+dp = Dispatcher(storage=MemoryStorage())
 lm = LifeManager()
 tm = CTimer()
 
@@ -24,6 +30,7 @@ def is_admin(id) -> bool:
     return id in admins
 
 
+# TODO: ADD await call.answer() TO EVERY INLINE BUTTON.
 #! I want to work with inlines and callbacks. It is my preference.
 def __keyboard():
 
@@ -202,14 +209,104 @@ async def resume_timer(call: types.CallbackQuery):
 
 
 # ~ -----------END |  Timer section ---------------
+#! ------------START | TASKS -------------------
+class TasksState(StatesGroup):
+    adding_daily_tasks = State()
+    parent_or_child = State()
+    which_parent = State()
 
 
+# * -------START | add_daily_task query handler ---------
 @dp.callback_query(lambda x: x.data == "add_daily_task")
-async def add_daily_task(call):
+async def add_daily_task(call: types.CallbackQuery, state: FSMContext):
+    await call.answer()
     if not is_admin(call.from_user.id):
+        return
+    await call.message.answer(
+        "Now Send Me The Task that you want to add, So in the future you can work on it and use adding it to the weekly table : "
+    )
+    await state.set_state(TasksState.adding_daily_tasks)
+
+
+@dp.message(TasksState.adding_daily_tasks)
+async def process_adding_daily_tasks_state(message: Message, state: FSMContext):
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👨 Parent", callback_data="parent_task")],
+            [InlineKeyboardButton(text="👶 Child", callback_data="child_task")],
+        ]
+    )
+
+    await message.answer(
+        f"""Do you want to add the `<b>{message.text}</b>` as an parent task or a child task?\n
+<b>NOTE:</b> For example watching `Youtube Tutorials` about programming can be a child class for `Programming`. Or it can be a PARENT that has for example `FreeCodeCamp` as its child.\n
+The Parent/Chile relation comes back at YOUR PERSPECTIVE of the subject.""",
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+    await state.update_data(task_name=message.text)  # User Response will be store here
+    await state.set_state(TasksState.parent_or_child)
+
+
+@dp.callback_query(TasksState.parent_or_child)
+async def process_paren_or_child_state(call: types.CallbackQuery, state: FSMContext):
+    await call.answer()
+    await state.update_data(
+        parent_or_child=call.data
+    )  # User Choice parent or child wil be store here
+
+    data = await state.get_data()
+    task_name = data.get("task_name")
+    task_type = data.get("parent_or_child")
+
+    if task_type == "parent_task":
+        if lm.add_daily_task(task_name=task_name):
+            await call.message.answer(
+                text=f"✅ The {task_name} Has Been Added Successfully to the database."
+            )
+            return
+        await call.message.answer(
+            text=f"❌ There Was An Error Wile Adding {task_name} to the database."
+        )
+        return
+
+    if task_type == "child_task":
+        all_parents = lm.get_all_parent_tasks()
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=i, callback_data=f"parent_{i}")]
+                for i in all_parents
+            ]
+        )
+        await call.message.answer(
+            "Please Choose Your Desired Parent Task:", reply_markup=keyboard
+        )
+        await state.update_data(task_name=task_name)
+        await state.set_state(TasksState.which_parent)
+
+
+@dp.callback_query(TasksState.which_parent)
+async def process_which_parent_state(call: types.CallbackQuery, state: FSMContext):
+    await call.answer()
+
+    await state.update_data(which_parent=call.data)
+    data = await state.get_data()
+    task_name = data.get("task_name")
+    parent_name = data.get("which_parent")[7:]
+
+    if lm.add_daily_task(task_name=task_name, ref_to=parent_name):
+        await call.message.answer(
+            text=f"✅ The {task_name} Has Been Added Successfully to the database with {parent_name} as its Parent."
+        )
+        return
+    else:
+        await call.message.answer(
+            text=f"❌ There Was An Error Wile Adding {task_name} to the database with {parent_name} as its Parent.\nHINT: Maybe the Parent Doesn't Exists."
+        )
         return
 
 
+# * -------END | add_daily_task query handler ---------
 @dp.callback_query(F.data == "get_all_parent_tasks")
 async def _get_all_parent_tasks(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -239,9 +336,10 @@ async def show_all_tables(call: types.CallbackQuery):
 async def insert_into_weekly_tables(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
 
 
+#! ------------END | TASKS -------------------
+# ? ------------START | BACKUP -------------------
 @dp.callback_query(F.data == "backup")
 async def __backup(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
@@ -256,6 +354,7 @@ async def __restore_backup(call: types.CallbackQuery):
     print(call.data)
 
 
+# ? ------------END | BACKUP -------------------
 async def main() -> None:
     bot = Bot(token=TOKEN)
     await dp.start_polling(bot)
