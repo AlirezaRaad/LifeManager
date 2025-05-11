@@ -221,7 +221,13 @@ async def get_all_parent_tasks(call: types.CallbackQuery):
 async def show_all_tables(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
+
+    tables = lm.show_all_tables()
+
+    _ = [f"{i}. {j}\n" for i, j in enumerate(tables, start=1)]
+    text = "🚨 Available <b>TABLES</b>\n\n" + "".join(_)
+
+    await call.message.answer(text=text, parse_mode="HTML")
 
 
 @dp.callback_query(F.data == "insert_into_weekly_table")
