@@ -211,10 +211,15 @@ async def add_daily_task(call):
 
 
 @dp.callback_query(F.data == "get_all_parent_tasks")
-async def get_all_parent_tasks(call: types.CallbackQuery):
+async def _get_all_parent_tasks(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
+    parents = lm.get_all_parent_tasks()
+
+    _ = [f"{i}. {j}\n" for i, j in enumerate(parents, start=1)]
+    text = "🚨 Parent <b>TASKS</b>\n\n" + "".join(_)
+
+    await call.message.answer(text=text, parse_mode="HTML")
 
 
 @dp.callback_query(F.data == "show_all_tables")
