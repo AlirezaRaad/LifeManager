@@ -31,7 +31,7 @@ def is_admin(id) -> bool:
     return id in admins
 
 
-# TODO: ADD await call.answer() TO EVERY INLINE BUTTON.
+# TODO: Add a function to user uses its own time in if the selected output is no async def process_duration(call: types.CallbackQuery, state: FSMContext):
 #! I want to work with inlines and callbacks. It is my preference.
 def __keyboard():
 
@@ -430,6 +430,11 @@ async def process_abort(call: types.CallbackQuery, state: FSMContext):
 # $-------START | INSERT INTO WEEKLY TABLE ------
 class InsertingIntoTABLE(StatesGroup):
     ask_duration = State()
+    which_task = State()
+    description = State()
+    confirmation = State()
+    aborting = State()
+    changing = State()
 
 
 @dp.callback_query(F.data == "insert_into_weekly_table")
@@ -474,14 +479,25 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
 
 @dp.callback_query(InsertingIntoTABLE.ask_duration)
 async def process_duration(call: types.CallbackQuery, state: FSMContext):
-    data = call.data[-3]
+
+    data = call.data[-3:]
 
     if data == "yes":
+        builder = InlineKeyboardBuilder()
+        for i in lm.fetch_all_non_parent_tasks():
+            builder.button(text=i, callback_data=f"{i}_task")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
+
         await call.answer(
             f"You Selected {user_duration} as your time.",
             show_alert=True,
         )
-
+        await call.message.answer(
+            f"Which of these task you want to select:", reply_markup=keyboard
+        )
+        await state.update_data(user_duration=user_duration)
+        await state.set_state(InsertingIntoTABLE.which_task)
     else:
         await call.answer(
             f"❌ Did not use the {user_duration} as your time, Please Start the new Timer(if you want to have new Timer) and try again ❌",
@@ -490,6 +506,101 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
         await call.message.delete()
         await _timer(call)
         return
+
+
+@dp.callback_query(InsertingIntoTABLE.which_task)
+async def process_which_task(call: types.CallbackQuery, state: FSMContext):
+
+    task_name = call.data[:-5]
+    await state.update_data(user_task_name=task_name)
+
+    await call.answer(f"✅ {task_name} ✅")
+    await call.message.answer(
+        f"🗞 Now Send me a DESCRIPTION of you'r work.\n\n<b>Send -1 to leave it empty.</b>",
+        parse_mode="HTML",
+    )
+
+    await state.set_state(InsertingIntoTABLE.description)
+
+
+@dp.message(InsertingIntoTABLE.description)
+async def process_description_task(msg: Message, state: FSMContext):
+    data = await state.get_data()
+
+    desc = msg.text
+    try:
+        if int(desc) == -1:
+            desc = None
+
+    except ValueError:
+        pass
+
+    await state.update_data(description=desc)
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Confirm", callback_data="insert_confirm_yes"
+                ),
+                InlineKeyboardButton(
+                    text="Change", callback_data="insert_confirm_change"
+                ),
+            ],
+            [InlineKeyboardButton(text="Abort", callback_data="insert_confirm_abort")],
+        ]
+    )
+
+    await msg.reply(
+        f"Do you want to add <b>{data.get("user_task_name")}</b> With <b>{data.get("user_duration")}</b> as your time, With description of: <b>{desc}</b>",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    # $ Now I have to control the flow for the user, first I have to make a callback query handler for insert_confirm_ , Then use the 3 states in it.
+
+
+@dp.callback_query(lambda x: x.data.startswith("insert_confirm_"))
+async def control_user_flow_for_inserting_task(
+    call: types.CallbackQuery, state: FSMContext
+):
+    choice = call.data.split("insert_confirm_")[1]
+
+    if choice == "yes":
+        data = await state.get_data()
+        task_id = lm.fetch_task_id(task_name=data.get("user_task_name"))
+
+        if lm.insert_into_weekly_table(
+            duration=data.get("user_duration"),
+            task_id=task_id,
+            description=data.get("description"),
+        ):
+            await call.answer(f"✅ Added to the database. ✅")
+            await state.clear()
+
+            await main_panel_callback(call)
+        else:
+            await call.answer(f"❌ An Error Occurred, ABORTING... ❌")
+    elif choice == "change":
+        await state.set_state(InsertingIntoTABLE.changing)
+    elif choice == "abort":
+        await state.set_state(InsertingIntoTABLE.aborting)
+
+
+@dp.message(InsertingIntoTABLE.confirmation)
+async def insert_confirmation(msg: types.Message, state: FSMContext):
+    data = await state.get_data()
+    print(data)
+
+
+@dp.message(InsertingIntoTABLE.changing)
+async def insert_changing(msg: types.Message, state: FSMContext):
+    data = await state.get_data()
+    print(data)
+
+
+@dp.message(InsertingIntoTABLE.aborting)
+async def insert_aborting(msg: types.Message, state: FSMContext):
+    data = await state.get_data()
+    print(data)
 
 
 # $-------END | INSERT INTO WEEKLY TABLE ------
