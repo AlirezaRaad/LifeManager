@@ -48,8 +48,8 @@ def __keyboard():
 
 @dp.message(lambda x: x.text == "/panel" and is_admin(x.from_user.id))
 async def main_panel(msg):
-    global sent_sticker
-    sent_sticker = await msg.answer_sticker(
+
+    await msg.answer_sticker(
         sticker="CAACAgEAAxkBAAMeaBiC9lsHcRNZbo6neK-n0WhBtFgAAroIAAK_jJAEPvqh7iT5WyM2BA"
     )
     # ~ Assign the sticker in a global variable to delete it when recalling this to prevent the un necessary pollution.
@@ -64,29 +64,47 @@ async def main_panel_callback(call: types.CallbackQuery):
         return
 
     await call.message.delete()
-    await call.bot.delete_message(
-        chat_id=sent_sticker.chat.id, message_id=sent_sticker.message_id
-    )
+
     await call.bot.send_message(call.message.chat.id, "/panel")
     await main_panel(call.message)
 
 
-#! ----------- DAILY TASK MANAGER SECTION -----------
+#! ------------------------------- START | DAILY TASK MANAGER SECTION -------------------------------------
 def main_dmt_keyboard():
 
     builder = InlineKeyboardBuilder()
 
-    builder.button(text="Add Daily Tasks", callback_data="add_daily_task")
-    builder.button(text="Get All Parent Tasks", callback_data="get_all_parent_tasks")
-    builder.button(text="Show All Tables", callback_data="show_all_tables")
-    builder.button(text="Insert Task", callback_data="insert_into_weekly_table")
+    builder.button(text="Tasks", callback_data="go_to_tasks")
 
-    builder.button(text="Backup", callback_data="backup")
-    builder.button(text="Restore backup", callback_data="restore_backup")
     builder.button(text="Timer", callback_data="timer")
+    builder.button(text="Backup/Restore", callback_data="go_to_backups")
     builder.button(text="Return", callback_data="/panel")
     builder.adjust(2)
 
+    return builder.as_markup()
+
+
+def dmt_tasks_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text="Adding Completed Tasks.", callback_data="insert_into_weekly_table"
+    )
+    builder.button(text="Add You'r Daily Task", callback_data="add_daily_task")
+
+    builder.button(text="All Parent Tasks", callback_data="get_all_parent_tasks")
+    builder.button(text="All Tables", callback_data="show_all_tables")
+    builder.button(text="⬅️ Return", callback_data="daily_task_manager")
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+
+def dmt_backup_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Backup", callback_data="backup")
+    builder.button(text="Restore backup", callback_data="restore_backup")
+    builder.button(text="⬅️ Return", callback_data="daily_task_manager")
+    builder.adjust(1)
     return builder.as_markup()
 
 
@@ -98,6 +116,26 @@ async def dmt(call):
 
     await call.message.delete()
     await call.message.answer(text="Choose: ", reply_markup=main_dmt_keyboard())
+
+
+@dp.callback_query(F.data == "go_to_tasks")
+async def tasks_dmt(call):
+    await call.answer()
+    if not is_admin(call.from_user.id):
+        return
+
+    await call.message.delete()
+    await call.message.answer(text="Choose2: ", reply_markup=dmt_tasks_keyboard())
+
+
+@dp.callback_query(F.data == "go_to_backups")
+async def tasks_dmt(call):
+    await call.answer()
+    if not is_admin(call.from_user.id):
+        return
+
+    await call.message.delete()
+    await call.message.answer(text="Choose2: ", reply_markup=dmt_backup_keyboard())
 
 
 # ~ -----------START |  Timer section ---------------
@@ -459,6 +497,7 @@ async def __restore_backup(call: types.CallbackQuery):
 
 
 # ? ------------END | BACKUP -------------------
+#! ------------------------------- END | DAILY TASK MANAGER SECTION -------------------------------------
 async def main() -> None:
     bot = Bot(token=TOKEN)
     await dp.start_polling(bot)
