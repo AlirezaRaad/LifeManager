@@ -794,6 +794,8 @@ async def backup_whole_folder(call: types.CallbackQuery):
 
     await call.answer("✅ Backup Successful ✅", parse_mode="HTML")
     await call.message.answer_document(document=types.FSInputFile("BACKUP.zip"))
+    if os.path.exists("BACKUP.zip"):
+        os.remove("BACKUP.zip")
 
 
 # ? ------------END | BACKUP -------------------
