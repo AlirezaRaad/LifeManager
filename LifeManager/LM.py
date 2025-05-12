@@ -511,6 +511,25 @@ class LifeManager(Cursor):
         else:
             return False
 
+    def fetch_task_id(self, task_name: str):
+        try:
+            with self._cursor() as cursor:
+                cursor.execute(
+                    "SELECT id FROM dailytasks WHERE taskname = %s;", (task_name,)
+                )
+
+                task_id = cursor.fetchone()
+
+            if task_id is None:
+                return False
+
+            return task_id[0]
+        except:
+            logger.exception(
+                "there was an error while fetching task id in LifeManager.fetch_task_id"
+            )
+            return False
+
     @property
     def bank(self) -> bool:
         try:

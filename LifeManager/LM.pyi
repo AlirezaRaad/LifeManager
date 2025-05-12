@@ -166,3 +166,13 @@ class LifeManager:
             bool: True if the assignment was successful, otherwise False.
         """
         ...
+
+    def fetch_task_id(self, task_name: str) -> int | bool:
+        """Fetches and returns the id of desired task name.
+
+        Args:
+            task_name (str): The desired task name to fetch its id.
+
+        Returns:
+            int | bool: Returns the id if task name exists, otherwise False.
+        """
