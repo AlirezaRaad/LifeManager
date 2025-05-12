@@ -530,6 +530,21 @@ class LifeManager(Cursor):
             )
             return False
 
+    def fetch_all_non_parent_tasks(self) -> list:
+        try:
+            with self._cursor() as cursor:
+                cursor.execute(
+                    "SELECT taskname FROM dailytasks WHERE parenttaskid is not null;"
+                )
+                all_tasks = cursor.fetchall()
+
+            return [x[0] for x in all_tasks]
+        except:
+            logger.exception(
+                "there was an error while fetching non parent tasks. in LifeManager.fetch_all_non_parent_tasks"
+            )
+            return []
+
     @property
     def bank(self) -> bool:
         try:

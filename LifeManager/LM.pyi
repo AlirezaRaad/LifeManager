@@ -176,3 +176,11 @@ class LifeManager:
         Returns:
             int | bool: Returns the id if task name exists, otherwise False.
         """
+
+    def fetch_all_non_parent_tasks(self) -> list:
+        """Returns a list of all Non-Parent tasks in dailytasks TABLE.
+
+        Returns:
+            list: Returns a list of strings, otherwise an empty list.
+        """
+        ...
