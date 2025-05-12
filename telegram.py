@@ -431,9 +431,9 @@ async def process_abort(call: types.CallbackQuery, state: FSMContext):
 class InsertingIntoTABLE(StatesGroup):
     ask_duration = State()
     which_task = State()
+    update_which_task = State()
     description = State()
     confirmation = State()
-    aborting = State()
     changing = State()
 
 
@@ -525,6 +525,7 @@ async def process_which_task(call: types.CallbackQuery, state: FSMContext):
 
 @dp.message(InsertingIntoTABLE.description)
 async def process_description_task(msg: Message, state: FSMContext):
+
     data = await state.get_data()
 
     desc = msg.text
@@ -555,13 +556,15 @@ async def process_description_task(msg: Message, state: FSMContext):
         parse_mode="HTML",
         reply_markup=keyboard,
     )
+    await state.set_state(InsertingIntoTABLE.confirmation)
     # $ Now I have to control the flow for the user, first I have to make a callback query handler for insert_confirm_ , Then use the 3 states in it.
 
 
-@dp.callback_query(lambda x: x.data.startswith("insert_confirm_"))
+@dp.callback_query(InsertingIntoTABLE.confirmation)
 async def control_user_flow_for_inserting_task(
     call: types.CallbackQuery, state: FSMContext
 ):
+
     choice = call.data.split("insert_confirm_")[1]
 
     if choice == "yes":
@@ -579,28 +582,92 @@ async def control_user_flow_for_inserting_task(
             await main_panel_callback(call)
         else:
             await call.answer(f"❌ An Error Occurred, ABORTING... ❌")
+            await state.clear()
+            await tasks_dmt(call)
+
     elif choice == "change":
+        await call.answer()
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Task", callback_data="insert_change_task"
+                    ),
+                    InlineKeyboardButton(
+                        text="Description", callback_data="insert_change_desc"
+                    ),
+                ]
+            ]
+        )
+        await call.message.answer(
+            "Which Step YOu want to chang:", reply_markup=keyboard
+        )
         await state.set_state(InsertingIntoTABLE.changing)
     elif choice == "abort":
-        await state.set_state(InsertingIntoTABLE.aborting)
+        await call.answer(f"❌ ABORTING... ❌")
+        await state.clear()
+        await tasks_dmt(call)
 
 
-@dp.message(InsertingIntoTABLE.confirmation)
-async def insert_confirmation(msg: types.Message, state: FSMContext):
+@dp.callback_query(InsertingIntoTABLE.changing)
+async def changing_user_flow_insert(call: types.CallbackQuery, state: FSMContext):
+    await call.answer()
+    data = call.data[-4:]
+
+    if data == "desc":
+        await call.answer("You can now update the description.")
+
+        await call.message.answer(
+            "Please send the new description (or send -1 to leave it empty):"
+        )
+
+        await state.set_state(InsertingIntoTABLE.description)
+    else:
+        builder = InlineKeyboardBuilder()
+        for i in lm.fetch_all_non_parent_tasks():
+            builder.button(text=i, callback_data=f"{i}_task")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
+
+        await call.answer(
+            f"You Selected {user_duration} as your time.",
+            show_alert=True,
+        )
+        await call.message.answer(
+            f"Which of these task you want to select:", reply_markup=keyboard
+        )
+
+        await state.set_state(InsertingIntoTABLE.update_which_task)
+
+
+@dp.callback_query(InsertingIntoTABLE.update_which_task)
+async def updating_which_task(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    print(data)
+    task_name = call.data.replace("_task", "")
+    await state.update_data(user_task_name=task_name)
 
+    await call.answer(f"✅ {task_name} ✅")
 
-@dp.message(InsertingIntoTABLE.changing)
-async def insert_changing(msg: types.Message, state: FSMContext):
-    data = await state.get_data()
-    print(data)
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Confirm", callback_data="insert_confirm_yes"
+                ),
+                InlineKeyboardButton(
+                    text="Change", callback_data="insert_confirm_change"
+                ),
+            ],
+            [InlineKeyboardButton(text="Abort", callback_data="insert_confirm_abort")],
+        ]
+    )
 
-
-@dp.message(InsertingIntoTABLE.aborting)
-async def insert_aborting(msg: types.Message, state: FSMContext):
-    data = await state.get_data()
-    print(data)
+    await call.message.reply(
+        f"Do you want to add <b>{task_name}</b> With <b>{data.get("user_duration")}</b> as your time, With description of: <b>{data.get("description")}</b>",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(InsertingIntoTABLE.confirmation)
 
 
 # $-------END | INSERT INTO WEEKLY TABLE ------
