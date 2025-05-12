@@ -1,5 +1,6 @@
 import asyncio
 import os
+import zipfile
 
 from aiogram import F, types
 from dotenv import load_dotenv
@@ -22,6 +23,7 @@ from LifeManager.LM import LifeManager
 from LifeManager.logger_config import logger
 from LifeManager.TM import CTimer
 
+bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 lm = LifeManager()
 tm = CTimer()
@@ -100,12 +102,24 @@ def dmt_tasks_keyboard():
 
 
 def dmt_backup_keyboard():
-    builder = InlineKeyboardBuilder()
-    builder.button(text="Backup", callback_data="backup")
-    builder.button(text="Restore backup", callback_data="restore_backup")
-    builder.button(text="⬅️ Return", callback_data="daily_task_manager")
-    builder.adjust(1)
-    return builder.as_markup()
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Backup", callback_data="backup"),
+                InlineKeyboardButton(
+                    text="Restore backup", callback_data="restore_backup"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Back up the whole Backup folder.",
+                    callback_data="backup_whole_folder",
+                )
+            ],
+            [InlineKeyboardButton(text="⬅️ Return", callback_data="daily_task_manager")],
+        ]
+    )
 
 
 @dp.callback_query(F.data == "daily_task_manager")
@@ -703,25 +717,89 @@ async def show_all_tables(call: types.CallbackQuery):
 #! ------------END | TASKS -------------------
 # ? ------------START | BACKUP -------------------
 @dp.callback_query(F.data == "backup")
-async def __backup(call: types.CallbackQuery):
-    await call.answer()
+async def backup_latest_file(call: types.CallbackQuery):
+
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
+
+    if lm.backup():
+        backup_file = os.path.join(
+            os.environ["BACKUP_PATH"], sorted(os.listdir(os.environ["BACKUP_PATH"]))[-1]
+        )
+
+        await call.answer("✅ Backup Successful ✅", parse_mode="HTML")
+        await call.message.answer_document(document=types.FSInputFile(backup_file))
+    else:
+        await call.answer("❌ Backing up Failed . ❌", parse_mode="HTML")
 
 
 @dp.callback_query(F.data == "restore_backup")
-async def __restore_backup(call: types.CallbackQuery):
-    await call.answer()
+async def restore_backup(call: types.CallbackQuery):
     if not is_admin(call.from_user.id):
         return
-    print(call.data)
+
+    await call.answer(
+        "📁 Please upload the backup file you want to restore.", show_alert=True
+    )
+
+
+@dp.message(F.content_type == types.ContentType.DOCUMENT)
+async def handle_backup_file(msg: types.Message):
+    if not is_admin(msg.from_user.id):
+        return
+
+    file_id = msg.document.file_id
+    file = await bot.get_file(file_id)
+
+    os.makedirs(os.path.join("backup", "from_telegram"), exist_ok=True)
+    file_path = os.path.join(
+        os.environ["BACKUP_PATH"], "from_telegram", msg.document.file_name
+    )
+
+    await bot.download_file(file.file_path, destination=file_path)
+
+    _ = await msg.answer(
+        f"✅ File downloaded, Please Wait for restoring",
+        parse_mode="HTML",
+    )
+
+    if lm.restore_backup(backup_path=file_path):
+        await _.bot.send_message(
+            chat_id=_.chat.id,
+            text=f"✅ From <code>{file_path}</code>, Backup <b>Restored Successfully.</b>",
+            parse_mode="HTML",
+            reply_to_message_id=_.message_id,
+        )
+
+    else:
+        await msg.answer(
+            f"❌ file download to <code>{file_path}</code>, But There Was an error while <b>RESTORING</b>",
+            parse_mode="HTML",
+        )
+
+
+@dp.callback_query(F.data == "backup_whole_folder")
+async def backup_whole_folder(call: types.CallbackQuery):
+    folder_path = os.path.join("backup")
+
+    with zipfile.ZipFile("BACKUP.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+
+                zipf.write(
+                    os.path.join(root, file),
+                    os.path.relpath(os.path.join(root, file), folder_path),
+                )
+
+    await call.answer("✅ Backup Successful ✅", parse_mode="HTML")
+    await call.message.answer_document(document=types.FSInputFile("BACKUP.zip"))
 
 
 # ? ------------END | BACKUP -------------------
 #! ------------------------------- END | DAILY TASK MANAGER SECTION -------------------------------------
 async def main() -> None:
-    bot = Bot(token=TOKEN)
+
     await dp.start_polling(bot)
 
 
