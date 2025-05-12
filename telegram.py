@@ -123,13 +123,15 @@ async def tasks_dmt(call):
     await call.answer()
     if not is_admin(call.from_user.id):
         return
-
-    await call.message.delete()
+    try:
+        await call.message.delete()
+    except:
+        pass
     await call.message.answer(text="Choose2: ", reply_markup=dmt_tasks_keyboard())
 
 
 @dp.callback_query(F.data == "go_to_backups")
-async def tasks_dmt(call):
+async def backup_dmt(call):
     await call.answer()
     if not is_admin(call.from_user.id):
         return
@@ -283,14 +285,14 @@ async def wanna_use_time(call: types.CallbackQuery):
     response = call.data[6:]
 
     global user_duration  # $ For Using in the Inserting into table
-    user_duration = user_time_elapsed
 
     if response == "yes":
+        user_duration = user_time_elapsed
         await call.answer(f"✅ Selected {user_duration} ✅")
+        await tasks_dmt(call)
     else:
-        await call.answer(f"❌ Ignored {user_duration} ❌")
-
-    await _timer(call)
+        await call.answer(f"❌ Ignored The Time ❌")
+        await _timer(call)
     try:
         await call.message.delete()
     except TelegramBadRequest:
@@ -423,34 +425,76 @@ async def process_abort(call: types.CallbackQuery, state: FSMContext):
 
 
 # * -------END | add_daily_task query handler ---------
+
+
 # $-------START | INSERT INTO WEEKLY TABLE ------
 class InsertingIntoTABLE(StatesGroup):
-    pass
+    ask_duration = State()
 
 
 @dp.callback_query(F.data == "insert_into_weekly_table")
-async def insert_into_weekly_tables(call: types.CallbackQuery):
+async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext):
     if not is_admin(call.from_user.id):
         return
     try:
         if not user_duration:
+            # $ Added This user_duration when the user Ended timer and said yes to saving it.
             raise NameError
     except NameError:
         await call.answer(
-            f"First start the TIMER, to capture the duration for your work.",
+            f"First start the TIMER, to capture the duration for your work you trying to add.",
             show_alert=True,
         )
+
+        await _timer(call)
         return
     except:
         logger.exception(
             "an Exception inside telegram.py module in insert_into_weekly_tables callback query handler."
         )
         return
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Yes 👍", callback_data="insert_duration_yes"
+                ),
+                InlineKeyboardButton(text="NO 👎", callback_data="insert_duration_no"),
+            ]
+        ]
+    )
+    await call.message.answer(
+        text=f"You Have `{user_duration}` Time Saved up, Do you want to use this?",
+        reply_markup=keyboard,
+    )
 
+    await state.set_state(InsertingIntoTABLE.ask_duration)
     await call.answer()
 
 
+@dp.callback_query(InsertingIntoTABLE.ask_duration)
+async def process_duration(call: types.CallbackQuery, state: FSMContext):
+    data = call.data[-3]
+
+    if data == "yes":
+        await call.answer(
+            f"You Selected {user_duration} as your time.",
+            show_alert=True,
+        )
+
+    else:
+        await call.answer(
+            f"❌ Did not use the {user_duration} as your time, Please Start the new Timer(if you want to have new Timer) and try again ❌",
+            show_alert=True,
+        )
+        await call.message.delete()
+        await _timer(call)
+        return
+
+
 # $-------END | INSERT INTO WEEKLY TABLE ------
+
+
 @dp.callback_query(F.data == "get_all_parent_tasks")
 async def _get_all_parent_tasks(call: types.CallbackQuery):
     await call.answer()
