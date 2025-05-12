@@ -118,6 +118,7 @@ class LifeManager(Cursor):
                     "SELECT id FROM dailytasks WHERE taskname = %s", (ref_to,)
                 )
                 parent_id = cursor.fetchone()[0]
+                # If the fetchone be none, it raise an error and prevents the flow from going further.
 
                 # GOAL: This will add the sub task to the TABLE.
                 cursor.execute(
