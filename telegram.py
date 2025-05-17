@@ -108,18 +108,30 @@ def main_dmt_keyboard():
 
 
 def dmt_tasks_keyboard():
-    builder = InlineKeyboardBuilder()
-    builder.button(
-        text="Adding Completed Tasks.", callback_data="insert_into_weekly_table"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Add New Records.",
+                    callback_data="insert_into_weekly_table",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Add New Daily Task", callback_data="add_daily_task"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="All Parent Tasks", callback_data="get_all_parent_tasks"
+                ),
+                InlineKeyboardButton(
+                    text="All Tables", callback_data="show_all_tables"
+                ),
+            ],
+            [InlineKeyboardButton(text="⬅️ Return", callback_data="daily_task_manager")],
+        ]
     )
-    builder.button(text="Add You'r Daily Task", callback_data="add_daily_task")
-
-    builder.button(text="All Parent Tasks", callback_data="get_all_parent_tasks")
-    builder.button(text="All Tables", callback_data="show_all_tables")
-    builder.button(text="⬅️ Return", callback_data="daily_task_manager")
-    builder.adjust(1)
-
-    return builder.as_markup()
 
 
 def dmt_backup_keyboard():
