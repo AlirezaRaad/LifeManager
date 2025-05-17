@@ -6,6 +6,8 @@ from aiogram import F, types
 from dotenv import load_dotenv
 
 load_dotenv()
+import random
+
 from aiogram import Bot, Dispatcher
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -27,6 +29,27 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 lm = LifeManager()
 tm = CTimer()
+
+# $ Just Some Stickers to make the bot feel better when I use /panel. You can remove it.
+greetings_stickers = {
+    "CAACAgEAAxkDAAIF8mgoljxXu4cOATpntCR4am3xerdsAAK6CAACv4yQBD76oe4k-VsjNgQ",
+    "CAACAgEAAxkBAAIGOmgomJY58hUN5ktUaDUh0tiFacuMAAK8CAACv4yQBIh7DqWx87_qNgQ",
+    "CAACAgEAAxkBAAIGQGgomJuITCbraQ9W8D-6LDqG92mxAAK_CAACv4yQBDfiaQyBhaE8NgQ",
+    "CAACAgEAAxkBAAIGQ2gomKDe4Dp7FerU-vlykD32QaNtAALFCAACv4yQBEv8iQmoZ8RdNgQ",
+    "CAACAgEAAxkBAAIGT2gomKucMP2Ec6w_DIAseaBSsD7pAALQCAACv4yQBPKFEqs70wjINgQ",
+    "CAACAgEAAxkBAAIGMWgomIj2PECis2xgiL2FbsSEWcClAAKxCAACv4yQBGXO3y8nkM42NgQ",
+    "CAACAgEAAxkBAAIGNGgomI6iiWpngCPySxrF-pgI54qQAAKyCAACv4yQBPukvERwiE7xNgQ",
+    "CAACAgEAAxkBAAIGSWgomKRbBZBtOC57No_cHsb66dzLAALKCAACv4yQBGmBuoEe-tDoNgQ",
+    "CAACAgEAAxkBAAIGPWgomJnTVEXeVWPPjZjPfm8hQ54eAAK9CAACv4yQBFwhpxphQFLjNgQ",
+    "CAACAgEAAxkBAAIGVWgomK_f0jEpY7PGyM_8bsjY2ZSKAALkCAACv4yQBAp4Myz2u0UxNgQ",
+    "CAACAgEAAxkBAAIGLmgomIK5GUv0pdhNyy4cvs8V5nGIAALGCAACv4yQBDqECXvzUl6ENgQ",
+    "CAACAgEAAxkBAAIGN2gomJIms6eSCfwBHL7ZreyXuMLUAAK0CAACv4yQBN0UndkxfeZoNgQ",
+    "CAACAgEAAxkBAAIGUmgomK1ztWjeIwt3QtQsRQ9FhWGNAALlCAACv4yQBFF9pHeBVnyNNgQ",
+    "CAACAgEAAxkBAAIGW2gomMHzIMLJGofMpIz9ImpTkKYBAAK1CAACv4yQBDfDX6YAAdyOMTYE",
+    "CAACAgEAAxkBAAIGXmgomMi7dwvW1LxiV6adjFD2-2EPAALRCAACv4yQBDCBtOEKh2ORNgQ",
+    "CAACAgEAAxkBAAIGRmgomKJ8cCBfRZ-jV6WhwKwR8rGaAALICAACv4yQBFfKmbh-BZmKNgQ",
+    "CAACAgEAAxkBAAIGTGgomKj9F97ErfQzSRmG0TOJjoEfAALPCAACv4yQBKsJSWpxRk2RNgQ",
+}
 
 
 def is_admin(id) -> bool:
@@ -50,13 +73,11 @@ def __keyboard():
 
 @dp.message(lambda x: x.text == "/panel" and is_admin(x.from_user.id))
 async def main_panel(msg):
-
-    await msg.answer_sticker(
-        sticker="CAACAgEAAxkBAAMeaBiC9lsHcRNZbo6neK-n0WhBtFgAAroIAAK_jJAEPvqh7iT5WyM2BA"
-    )
+    random_sticker = random.choice(list(greetings_stickers))
+    await msg.answer_sticker(sticker=random_sticker)
     # ~ Assign the sticker in a global variable to delete it when recalling this to prevent the un necessary pollution.
 
-    await msg.answer(text="🎛", reply_markup=__keyboard())
+    await msg.answer(text="🎛 Admin Panel", reply_markup=__keyboard())
 
 
 @dp.callback_query(F.data == "/panel")
