@@ -56,7 +56,11 @@ class CBanker:
         ...
 
     def make_transaction(
-        self, bank_name: str, amount: float, description: str | None = None
+        self,
+        bank_name: str,
+        amount: float,
+        expense_type: str,
+        description: str | None = None,
     ) -> bool:
         """
         Make a transaction for a bank.
@@ -65,7 +69,7 @@ class CBanker:
             bank_name (str): The bank name.
             amount (float): The amount of the transaction.
             description (str | None, optional): Optional description.
-
+            expense_type (str) : Type of expense.
         Returns:
             bool: True if transaction succeeded, otherwise False.
         """

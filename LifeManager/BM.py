@@ -173,7 +173,7 @@ class CBanker(Cursor):
                 )
             return result
 
-    def _fetch_bank_id(self, bank_name) -> int | bool:
+    def __fetch_bank_id(self, bank_name) -> int | bool:
         with self._cursor() as cursor:
             cursor.execute("""SELECT id FROM banks WHERE bankname = %s""", (bank_name,))
             answer = cursor.fetchone()
@@ -204,7 +204,7 @@ class CBanker(Cursor):
         self,
         bank_name: str,
         amount: float,
-        expense_type: int,
+        expense_type: str,
         description: str | None = None,
     ):
         expense_id = self.fetch_expense_id(expense_name=expense_type)
