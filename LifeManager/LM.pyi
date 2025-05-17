@@ -184,3 +184,18 @@ class LifeManager:
             list: Returns a list of strings, otherwise an empty list.
         """
         ...
+
+    def fetch_child_tasks_of(self, parent_task_name: str) -> list:
+        """Retrieves all child tasks associated with the specified parent task name.
+
+        Args:
+            parent_task_name (str): The name of the parent task whose child tasks are to be fetched.
+
+        Returns:
+            list: An empty list if the specified task is not a parent, otherwise a list of its child tasks.
+
+        Example:
+            >>> task_manager.fetch_child_tasks_of("MainTask")
+            ["SubTask1", "SubTask2"]
+        """
+        ...

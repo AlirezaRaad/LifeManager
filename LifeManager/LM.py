@@ -556,3 +556,14 @@ class LifeManager(Cursor):
                 "An Exception in making an CBanker instance in LM.bank method."
             )
             return False
+
+    def fetch_child_tasks_of(self, parent_task_name: str) -> list:
+        if parent_task_name not in self.get_all_parent_tasks():
+            return []
+
+        parent_id = self.fetch_task_id(task_name=parent_task_name)
+        with self._cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM dailytasks WHERE parenttaskid = %s", (parent_id,)
+            )
+            return [i[1] for i in cursor.fetchall()]
