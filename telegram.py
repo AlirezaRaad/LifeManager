@@ -29,6 +29,8 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 lm = LifeManager()
 tm = CTimer()
+lm.bank
+bnk = lm.banker
 
 # $ Just Some Stickers to make the bot feel better when I use /panel. You can remove it.
 greetings_stickers = {
@@ -1018,7 +1020,90 @@ async def backup_whole_folder(call: types.CallbackQuery):
 # ? ------------END | BACKUP -------------------
 #! ------------------------------- END | DAILY TASK MANAGER SECTION -------------------------------------
 
+
 #! ------------------------------- START | BANK MANAGER SECTION -------------------------------------
+class Banking(StatesGroup):
+    add_bank = State()
+    add_bank_confirmation = State()
+
+
+@dp.callback_query(F.data == "banking")
+async def main_banking(call: types.CallbackQuery):
+    """Shows banking keyboard."""
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Add BANK", callback_data="add_bank"),
+                InlineKeyboardButton(text="Add Expense", callback_data="add_expense"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Add Transaction", callback_data="make_transaction"
+                )
+            ],
+            [
+                InlineKeyboardButton(text="Banks", callback_data="show_banks"),
+                InlineKeyboardButton(text="Expenses", callback_data="show_expenses"),
+            ],
+        ]
+    )
+
+    await call.message.answer(text="choose", reply_markup=keyboard)
+
+
+@dp.callback_query(F.data == "add_bank")
+async def add_a_bank(call: types.CallbackQuery, state: FSMContext):
+    """Ask user to give bank name"""
+    await call.answer()
+    await call.message.answer("Please Provide Your bank name :")
+    await state.set_state(Banking.add_bank)
+
+
+@dp.message(Banking.add_bank)
+async def continue_add_bank(msg: Message, state: FSMContext):
+    """confirm the bank name"""
+    bank_name = str(msg.text)
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Yes 👍", callback_data="add_bank_yes"),
+                InlineKeyboardButton(text="NO 👎", callback_data="add_bank_no"),
+            ],
+            [InlineKeyboardButton(text="Abort ❌", callback_data="add_bank_abort")],
+        ]
+    )
+    await msg.reply(
+        f"Do you want to add <b>{bank_name}</b> to the database?",
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+    await state.update_data(bank_name=bank_name)
+    await state.set_state(Banking.add_bank_confirmation)
+
+
+@dp.callback_query(Banking.add_bank_confirmation)
+async def continue_add_bank(call: types.CallbackQuery, state: FSMContext):
+    """add a bank name if user says yes or ignore it if user say no/abort"""
+    if call.data == "add_bank_abort":
+        await call.answer(f"❌ Adding Bank Aborted ❌")
+        await main_banking(call)
+        return
+
+    if call.data == "add_bank_no":
+        await call.answer(f"❌ Adding Bank Canceled ❌")
+        await main_banking(call)
+        return
+
+    data = await state.get_data()
+    bank_name = data.get("bank_name")
+
+    if bnk.add_bank(bank_name=bank_name.lower()):
+        await call.answer(f"✅ {bank_name} was added to database ✅")
+        await main_banking(call)
+    else:
+        await call.answer(f"❌Inserting {bank_name} to database was unsuccessful❌")
+        await main_banking(call)
 
 
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
