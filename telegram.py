@@ -1027,7 +1027,8 @@ class Banking(StatesGroup):
     add_bank_confirmation = State()
     add_expense = State()
     add_expense_2 = State()
-    add_expense_3 = State()
+    child_expense = State()
+    confirmation_expense = State()
 
 
 @dp.callback_query(F.data == "banking")
@@ -1159,7 +1160,6 @@ The Parent/Chile relation comes back at YOUR PERSPECTIVE of the subject.""",
 @dp.callback_query(Banking.add_expense_2)
 async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
     """confirm if the expense is PARENT OR CHILD"""
-    data = await state.get_data()
 
     await call.message.delete()
 
@@ -1171,57 +1171,71 @@ async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
         await main_banking(call)
         return
 
-    if which == "child":
-        await state.update_data(expense_type=which)
-    else:
-        await state.update_data(expense_type=which)
+    if which == "parent":
 
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="Yes 👍", callback_data="expense_yes"),
-                InlineKeyboardButton(text="NO 👎", callback_data="expense_no"),
-            ],
-            [InlineKeyboardButton(text="Abort ❌", callback_data="expense_abort")],
-        ]
-    )
-    await call.message.answer(
-        f"Do You want to Add {data.get("expense_name")} as {which}?",
-        reply_markup=keyboard,
-    )
-    await state.set_state(Banking.add_expense_3)
+        await state.update_data(parent_expense=None)
+        await confirm_the_expense(call, state)
 
+    elif which == "child":
 
-@dp.callback_query(Banking.add_expense_3)
-async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
-    _answer = call.data.split("expense_")[1]
+        parent_expenses = bnk._get_all_parent_expenses()
+        if parent_expenses:
 
-    data = await state.get_data()
+            builder = InlineKeyboardBuilder()
+            for tsk in parent_expenses:
+                builder.button(text=tsk, callback_data=f"parent_expense_{tsk}")
+            builder.adjust(2)
+            keyboard = builder.as_markup()
 
-    if _answer == "abort":
-        await call.answer("❌ Aborting Adding Expense... ❌")
-        await call.message.delete()
-        await main_banking(call)
-        return
-
-    if _answer == "yes":
-        if data.get("expense_type") == "parent":
-            exp_name = data.get("expense_name")
-            if bnk.add_expense(expense_name=exp_name, ref_to=None):
-                await call.answer(f"✅ {exp_name} Added Successfully as a PARENT ✅")
-                return
-            else:
-                await call.answer(
-                    f"✅ An ERROR occurred while adding {exp_name} as PARENT",
-                    show_alert=True,
-                )
-                return
+            await call.message.answer(
+                f"Choose the Parent Expense: ", reply_markup=keyboard
+            )
+            await state.set_state(Banking.child_expense)
         else:
-            pass
+            await call.answer(f"❌First Add Some PARENT expense.❌", show_alert=True)
+            return
     else:
         await call.answer("❌ Canceling Adding Expense... ❌")
         await call.message.delete()
         await main_banking(call)
+
+
+@dp.callback_query(Banking.child_expense)
+async def choose_child_expense(call: types.CallbackQuery, state: FSMContext):
+    call.answer()
+
+    parent_answer = call.data.split("parent_expense_")[1]
+    await state.update_data(parent_expense=parent_answer)
+    data = await state.get_data()
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Yes 👍", callback_data="confirm_expense_yes"
+                ),
+                InlineKeyboardButton(text="NO 👎", callback_data="confirm_expense_no"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Abort ❌", callback_data="confirm_expense_abort"
+                )
+            ],
+        ]
+    )
+
+    await call.message.answer(
+        f"Do you want to add <b>{data.get("expense_name")}</b> as a child for <b>{parent_answer}</b>",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(Banking.confirmation_expense)
+
+
+@dp.callback_query(Banking.confirmation_expense)
+async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    print(data)
 
 
 # $ ---------------- END | ADD EXPENSE ---------------
