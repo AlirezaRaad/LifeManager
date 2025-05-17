@@ -478,7 +478,11 @@ async def process_abort(call: types.CallbackQuery, state: FSMContext):
 
 # $-------START | INSERT INTO WEEKLY TABLE ------
 class InsertingIntoTABLE(StatesGroup):
+    start_or_use_time = State()
     ask_duration = State()
+    custom_duration = State()
+    # custom_duration_confirmation = State()
+    custom_duration_H_M_S = State()
     which_task = State()
     which_child_task = State()
     update_which_task = State()
@@ -497,12 +501,25 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
             # $ Added This user_duration when the user Ended timer and said yes to saving it.
             raise NameError
     except NameError:
-        await call.answer(
-            f"First start the TIMER, to capture the duration for your work you trying to add.",
-            show_alert=True,
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Start the timer", callback_data="start_or_use_time_timer"
+                    ),
+                    InlineKeyboardButton(
+                        text="Enter Custom Time",
+                        callback_data="start_or_use_time_custom",
+                    ),
+                ]
+            ]
+        )
+        await call.message.answer(
+            f"You Do not have a valid TIMER, Do you want to start the time or use custom timer?",
+            reply_markup=keyboard,
         )
 
-        await _timer(call)
+        await state.set_state(InsertingIntoTABLE.start_or_use_time)
         return
     except:
         logger.exception(
@@ -516,16 +533,37 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
                     text="Yes 👍", callback_data="insert_duration_yes"
                 ),
                 InlineKeyboardButton(text="NO 👎", callback_data="insert_duration_no"),
-            ]
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Yes - Send Your Own time (IN SECONDS)",
+                    callback_data="insert_duration_yup",
+                ),
+            ],
         ]
     )
     await call.message.answer(
         text=f"You Have `{user_duration}` Time Saved up, Do you want to use this?",
         reply_markup=keyboard,
+        parse_mode="HTML",
     )
 
     await state.set_state(InsertingIntoTABLE.ask_duration)
     await call.answer()
+
+
+@dp.callback_query(InsertingIntoTABLE.start_or_use_time)
+async def process_duration(call: types.CallbackQuery, state: FSMContext):
+    call.answer()
+
+    data = call.data.split("start_or_use_time_")[1]
+    if data == "timer":
+        await _timer(call)
+    else:
+        await call.message.answer(
+            "Please Enter Your Custom Duration in <b>SECONDS</b> : ", parse_mode="HTML"
+        )
+        await state.set_state(InsertingIntoTABLE.custom_duration)
 
 
 @dp.callback_query(InsertingIntoTABLE.ask_duration)
@@ -555,6 +593,12 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
         await state.update_data(user_duration=user_duration)
 
         await state.set_state(InsertingIntoTABLE.which_child_task)
+
+    elif data == "yup":
+        await call.message.answer(
+            "Please Enter Your Custom Duration in <b>SECONDS</b?: ", parse_mode="HTML"
+        )
+        await state.set_state(InsertingIntoTABLE.custom_duration)
     else:
         await call.answer(
             f"❌ Did not use the {user_duration} as your time, Please Start the new Timer(if you want to have new Timer) and try again ❌",
@@ -563,6 +607,60 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
         await call.message.delete()
         await _timer(call)
         return
+
+
+@dp.message(InsertingIntoTABLE.custom_duration)
+async def process_custom_duration(msg: Message, state: FSMContext):
+    try:
+        custom_duration = int(msg.text)
+    except Exception:
+        await msg.reply("PLEASE ENTER A VALID NUMBER.\n❌ABORTING...❌")
+        await state.clear()
+        await main_panel(msg)
+        return
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Yes 👍", callback_data="custom_duration_yes"
+                ),
+                InlineKeyboardButton(text="NO 👎", callback_data="custom_duration_no"),
+            ]
+        ]
+    )
+    await msg.reply(f"Use {custom_duration} as the Time?", reply_markup=keyboard)
+    await state.update_data(custom_duration=custom_duration)
+    await state.set_state(InsertingIntoTABLE.custom_duration_confirmation)
+
+
+@dp.callback_query(InsertingIntoTABLE.custom_duration_confirmation)
+async def process_which_child_task(call: types.CallbackQuery, state: FSMContext):
+    _answer = call.data.split("custom_duration_")[1]
+
+    data = await state.get_data()
+
+    if _answer == "yes":
+        user_duration = data.get("custom_duration")
+        builder = InlineKeyboardBuilder()
+        for i in lm.get_all_parent_tasks():
+            builder.button(text=i, callback_data=f"{i}_parent_task")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
+
+        await call.answer(
+            f"You Selected {user_duration} as your time.",
+            show_alert=True,
+        )
+        await call.message.answer(
+            f"Which of these parent task you want add your task to ?:",
+            reply_markup=keyboard,
+        )
+        await state.update_data(user_duration=user_duration)
+
+        await state.set_state(InsertingIntoTABLE.which_child_task)
+    else:
+        await insert_into_weekly_tables(call, state)
 
 
 @dp.callback_query(InsertingIntoTABLE.which_child_task)
