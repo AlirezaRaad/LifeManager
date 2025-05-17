@@ -212,7 +212,7 @@ class CBanker(Cursor):
             logger.error(f"an error with fetching {expense_type} from DataBase.")
             return False
 
-        bank_id = self._fetch_bank_id(bank_name=bank_name)
+        bank_id = self.__fetch_bank_id(bank_name=bank_name)
         if not bank_id:
             logger.error(f"{bank_name} doesn't exists in the banks TABLE")
             return False
