@@ -479,7 +479,9 @@ async def process_abort(call: types.CallbackQuery, state: FSMContext):
 class InsertingIntoTABLE(StatesGroup):
     ask_duration = State()
     which_task = State()
+    which_child_task = State()
     update_which_task = State()
+    update_which_child_task = State()
     description = State()
     confirmation = State()
     changing = State()
@@ -532,8 +534,8 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
 
     if data == "yes":
         builder = InlineKeyboardBuilder()
-        for i in lm.fetch_all_non_parent_tasks():
-            builder.button(text=i, callback_data=f"{i}_task")
+        for i in lm.get_all_parent_tasks():
+            builder.button(text=i, callback_data=f"{i}_parent_task")
         builder.adjust(2)
         keyboard = builder.as_markup()
 
@@ -542,10 +544,12 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
             show_alert=True,
         )
         await call.message.answer(
-            f"Which of these task you want to select:", reply_markup=keyboard
+            f"Which of these parent task you want add your task to ?:",
+            reply_markup=keyboard,
         )
         await state.update_data(user_duration=user_duration)
-        await state.set_state(InsertingIntoTABLE.which_task)
+
+        await state.set_state(InsertingIntoTABLE.which_child_task)
     else:
         await call.answer(
             f"❌ Did not use the {user_duration} as your time, Please Start the new Timer(if you want to have new Timer) and try again ❌",
@@ -554,6 +558,43 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
         await call.message.delete()
         await _timer(call)
         return
+
+
+@dp.callback_query(InsertingIntoTABLE.which_child_task)
+async def process_which_child_task(call: types.CallbackQuery, state: FSMContext):
+    await call.answer()
+    await call.message.delete()
+    parent = call.data[:-12]
+    tasks = lm.fetch_child_tasks_of(parent_task_name=parent)
+
+    if not tasks:
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Add a child", callback_data="add_daily_task"
+                    )
+                ]
+            ]
+        )
+        await call.message.answer(
+            text=f"No child tasks found for {parent}, Try Adding one..",
+            reply_markup=keyboard,
+        )
+        await state.clear()
+        return
+
+    builder = InlineKeyboardBuilder()
+    for i in tasks:
+        builder.button(text=i, callback_data=f"{i}_task")
+    builder.adjust(2)
+    keyboard = builder.as_markup()
+
+    await call.message.answer(
+        text="Which of These Tasks You have done : ", reply_markup=keyboard
+    )
+
+    await state.set_state(InsertingIntoTABLE.which_task)
 
 
 @dp.callback_query(InsertingIntoTABLE.which_task)
@@ -624,7 +665,9 @@ async def control_user_flow_for_inserting_task(
             task_id=task_id,
             description=data.get("description"),
         ):
-            await call.answer(f"✅ Added to the database. ✅")
+            await call.answer(
+                f"✅ Added to the database. ({lm.current_week_name} TABLE)✅"
+            )
             await state.clear()
 
             await main_panel_callback(call)
@@ -672,26 +715,64 @@ async def changing_user_flow_insert(call: types.CallbackQuery, state: FSMContext
         await state.set_state(InsertingIntoTABLE.description)
     else:
         builder = InlineKeyboardBuilder()
-        for i in lm.fetch_all_non_parent_tasks():
-            builder.button(text=i, callback_data=f"{i}_task")
+        for i in lm.get_all_parent_tasks():
+            builder.button(text=i, callback_data=f"{i}_parent_task2")
         builder.adjust(2)
         keyboard = builder.as_markup()
 
         await call.answer(
-            f"You Selected {user_duration} as your time.",
+            f"Pre Selected {user_duration} as time.",
             show_alert=True,
         )
-        await call.message.answer(
-            f"Which of these task you want to select:", reply_markup=keyboard
+        await call.message.answer(f"Select You parent task: ", reply_markup=keyboard)
+
+        await state.set_state(InsertingIntoTABLE.update_which_child_task)
+
+
+@dp.callback_query(InsertingIntoTABLE.update_which_child_task)
+async def updating_which_child_task(call: types.CallbackQuery, state: FSMContext):
+
+    await call.message.delete()
+    parent = call.data[:-13]
+
+    tasks = lm.fetch_child_tasks_of(parent_task_name=parent)
+
+    if not tasks:
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Add a child", callback_data="add_daily_task"
+                    )
+                ]
+            ]
         )
 
-        await state.set_state(InsertingIntoTABLE.update_which_task)
+        await call.message.answer(
+            text=f"No child tasks found for {parent}, Try Adding one..",
+            reply_markup=keyboard,
+        )
+        await state.clear()
+        return
+
+    builder = InlineKeyboardBuilder()
+    for i in tasks:
+        builder.button(text=i, callback_data=f"{i}_task")
+    builder.adjust(2)
+    keyboard = builder.as_markup()
+
+    await call.message.answer(text="Select your NEW child:", reply_markup=keyboard)
+
+    await state.set_state(InsertingIntoTABLE.update_which_task)
 
 
 @dp.callback_query(InsertingIntoTABLE.update_which_task)
 async def updating_which_task(call: types.CallbackQuery, state: FSMContext):
+
     data = await state.get_data()
+
     task_name = call.data.replace("_task", "")
+
     await state.update_data(user_task_name=task_name)
 
     await call.answer(f"✅ {task_name} ✅")
