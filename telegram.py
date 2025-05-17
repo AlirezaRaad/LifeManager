@@ -1061,6 +1061,7 @@ async def main_banking(call: types.CallbackQuery):
     await call.message.answer(text="choose", reply_markup=keyboard)
 
 
+# $ ---------------- START | ADD BANK ---------------
 @dp.callback_query(F.data == "add_bank")
 async def add_a_bank(call: types.CallbackQuery, state: FSMContext):
     """Ask user to give bank name"""
@@ -1096,9 +1097,7 @@ async def continue_add_bank(msg: Message, state: FSMContext):
 @dp.callback_query(Banking.add_bank_confirmation)
 async def continue_add_bank(call: types.CallbackQuery, state: FSMContext):
     """add a bank name if user says yes or ignore it if user say no/abort"""
-
-    call.message.delete()
-
+    await call.message.delete()
     if call.data == "add_bank_abort":
         await call.answer(f"❌ Adding Bank Aborted ❌")
         await main_banking(call)
@@ -1109,17 +1108,20 @@ async def continue_add_bank(call: types.CallbackQuery, state: FSMContext):
         await main_banking(call)
         return
 
-    data = await state.get_data()
-    bank_name = data.get("bank_name")
+    if call.data == "add_bank_yes":
+        data = await state.get_data()
+        bank_name = data.get("bank_name")
 
-    if bnk.add_bank(bank_name=bank_name.lower()):
-        await call.answer(f"✅ {bank_name} was added to database ✅")
-        await main_banking(call)
-    else:
-        await call.answer(f"❌Inserting {bank_name} to database was unsuccessful❌")
-        await main_banking(call)
+        if bnk.add_bank(bank_name=bank_name.lower()):
+            await call.answer(f"✅ {bank_name} was added to database ✅")
+            await main_banking(call)
+        else:
+            await call.answer(f"❌Inserting {bank_name} to database was unsuccessful❌")
+            await main_banking(call)
 
 
+# $ ---------------- END | ADD BANK ---------------
+# $ ---------------- START | ADD EXPENSE ---------------
 @dp.callback_query(F.data == "add_an_expense")
 async def add_a_expense(call: types.CallbackQuery, state: FSMContext):
     """Asking the user to send a expense name"""
@@ -1222,6 +1224,7 @@ async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
         await main_banking(call)
 
 
+# $ ---------------- END | ADD EXPENSE ---------------
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
 async def main() -> None:
 
