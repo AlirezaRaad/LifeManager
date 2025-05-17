@@ -58,7 +58,10 @@ def is_admin(id) -> bool:
 
 # TODO: Add a function to user uses its own time in if the selected output is no async def process_duration(call: types.CallbackQuery, state: FSMContext):
 #! I want to work with inlines and callbacks. It is my preference.
-def __keyboard():
+
+
+@dp.message(lambda x: x.text == "/panel" and is_admin(x.from_user.id))
+async def main_panel(msg):
 
     builder = InlineKeyboardBuilder()
 
@@ -68,16 +71,12 @@ def __keyboard():
 
     builder.adjust(1)
 
-    return builder.as_markup()
-
-
-@dp.message(lambda x: x.text == "/panel" and is_admin(x.from_user.id))
-async def main_panel(msg):
+    __keyboard = builder.as_markup()
     random_sticker = random.choice(list(greetings_stickers))
     await msg.answer_sticker(sticker=random_sticker)
     # ~ Assign the sticker in a global variable to delete it when recalling this to prevent the un necessary pollution.
 
-    await msg.answer(text="🎛 Admin Panel", reply_markup=__keyboard())
+    await msg.answer(text="🎛 Admin Panel", reply_markup=__keyboard)
 
 
 @dp.callback_query(F.data == "/panel")
@@ -481,8 +480,8 @@ class InsertingIntoTABLE(StatesGroup):
     start_or_use_time = State()
     ask_duration = State()
     custom_duration = State()
-    # custom_duration_confirmation = State()
-    custom_duration_H_M_S = State()
+    custom_duration_confirmation = State()
+    # custom_duration_H_M_S = State()
     which_task = State()
     which_child_task = State()
     update_which_task = State()
@@ -1018,6 +1017,11 @@ async def backup_whole_folder(call: types.CallbackQuery):
 
 # ? ------------END | BACKUP -------------------
 #! ------------------------------- END | DAILY TASK MANAGER SECTION -------------------------------------
+
+#! ------------------------------- START | BANK MANAGER SECTION -------------------------------------
+
+
+#! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
 async def main() -> None:
 
     await dp.start_polling(bot)
