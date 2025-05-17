@@ -192,18 +192,19 @@ async def backup_dmt(call):
 
 def timer_keyboard():
 
-    builder = InlineKeyboardBuilder()
-
-    builder.button(text="Start Timer", callback_data="s_timer")
-    builder.button(text="End Timer", callback_data="e_timer")
-    builder.button(text="Pause Timer", callback_data="p_timer")
-    builder.button(text="Resume Timer", callback_data="r_timer")
-
-    builder.button(text="Return", callback_data="daily_task_manager")
-
-    builder.adjust(1)
-
-    return builder.as_markup()
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Start Timer", callback_data="s_timer"),
+                InlineKeyboardButton(text="End Timer", callback_data="e_timer"),
+            ],
+            [
+                InlineKeyboardButton(text="Pause Timer", callback_data="p_timer"),
+                InlineKeyboardButton(text="Resume Timer", callback_data="r_timer"),
+            ],
+            [InlineKeyboardButton(text="⬅️ Return", callback_data="daily_task_manager")],
+        ]
+    )
 
 
 @dp.callback_query(F.data == "timer")
