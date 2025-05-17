@@ -173,7 +173,7 @@ class CBanker(Cursor):
                 )
             return result
 
-    def __fetch_bank_id(self, bank_name) -> int | bool:
+    def _fetch_bank_id(self, bank_name) -> int | bool:
         with self._cursor() as cursor:
             cursor.execute("""SELECT id FROM banks WHERE bankname = %s""", (bank_name,))
             answer = cursor.fetchone()
@@ -212,7 +212,7 @@ class CBanker(Cursor):
             logger.error(f"an error with fetching {expense_type} from DataBase.")
             return False
 
-        bank_id = self.__fetch_bank_id(bank_name=bank_name)
+        bank_id = self._fetch_bank_id(bank_name=bank_name)
         if not bank_id:
             logger.error(f"{bank_name} doesn't exists in the banks TABLE")
             return False
@@ -265,7 +265,7 @@ class CBanker(Cursor):
 
         if ref_to is None:
 
-            if expense_name not in self.__get_all_parent_expenses():
+            if expense_name not in self._get_all_parent_expenses():
                 with self._cursor() as cursor:
                     try:
                         cursor.execute(
@@ -306,7 +306,7 @@ class CBanker(Cursor):
                 )
                 return False
 
-    def __get_all_parent_expenses(self) -> list:
+    def _get_all_parent_expenses(self) -> list:
 
         with self._cursor() as cursor:
             cursor.execute(
