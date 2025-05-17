@@ -167,6 +167,7 @@ async def dmt(call):
 
 @dp.callback_query(F.data == "go_to_tasks")
 async def tasks_dmt(call):
+
     await call.answer()
     if not is_admin(call.from_user.id):
         return
@@ -531,6 +532,10 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
 async def process_duration(call: types.CallbackQuery, state: FSMContext):
 
     data = call.data[-3:]
+    try:
+        await call.message.delete()
+    except:
+        pass
 
     if data == "yes":
         builder = InlineKeyboardBuilder()
