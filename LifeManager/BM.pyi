@@ -1,3 +1,6 @@
+import datetime as dt
+from typing import List, Optional, Tuple
+
 class CBanker:
     """
     This class handles creation and interaction with banking tables.
@@ -128,3 +131,16 @@ class CBanker:
     def show_all_banks(self):
         """Show All of the Banks."""
         ...
+
+    def fetch_records(
+        self, start_date: str, end_date: Optional[str] = None
+    ) -> List[Tuple[str, str, float, float, dt.datetime, str]]:
+        """Fetches two dates as *YEAR-MONTH-DAY* format and returns all of the transactions between these two dates.
+
+        Args:
+            start_date (str): The Starting date in *YEAR-MONTH-DAY* format
+            end_date (Optional[str], optional): Ending date in *YEAR-MONTH-DAY* format. Defaults to None; if sets to None, it gets current time.
+
+        Returns:
+            List[Tuple[str, str, float, float, dt.datetime, str]]: Returns list of tuple with these headers: bankname, expensename, amount, balance, datetime, description
+        """

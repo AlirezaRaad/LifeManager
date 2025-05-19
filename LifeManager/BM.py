@@ -1,6 +1,7 @@
 import datetime as dt
 import os
 from collections import deque
+from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -415,3 +416,29 @@ class CBanker(Cursor):
                 f"An error in making {mapping_banks[_id]} PIE CHART in last {last_x_days} days."
             )
             return False
+
+    def fetch_records(
+        self, start_date: str, end_date: Optional[str] = None
+    ) -> List[Tuple[str, str, float, float, dt.datetime, str]]:
+        try:
+            start_date = dt.datetime.strptime(start_date, "%Y-%m-%d")
+
+            if end_date is None:
+                end_date = dt.datetime.now()
+            else:
+                end_date = dt.datetime.strptime(end_date, "%Y-%m-%d")
+        except:
+            logger.exception(
+                "An Error while parsing the dates in Cbanker.fetch_records"
+            )
+            return []  # ==> False
+        try:
+            with self._cursor() as cursor:
+                cursor.execute(
+                    "SELECT b.bankname, ext.expensename, br.amount, br.balance, br.datetime, br.description FROM banker br JOIN BANKS b ON b.id = br.bankid JOIN bankexpensetype ext ON ext.id = br.expensetype WHERE datetime < %s and datetime > %s",
+                    (end_date, start_date),
+                )
+                return cursor.fetchall()
+        except:
+            logger.exception("An Error while using cursor in Cbanker.fetch_records")
+            return []
