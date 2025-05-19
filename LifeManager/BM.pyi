@@ -124,3 +124,7 @@ class CBanker:
             list: empty list is it cant find the name or the name is child not parent, otherwise a list of children
         """
         ...
+
+    def show_all_banks(self):
+        """Show All of the Banks."""
+        ...

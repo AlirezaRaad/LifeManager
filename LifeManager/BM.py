@@ -326,6 +326,14 @@ class CBanker(Cursor):
 
             return [i[0] for i in cursor.fetchall()]
 
+    def show_all_banks(self):
+        """Show All of the Banks."""
+
+        with self._cursor() as cursor:
+            cursor.execute("SELECT bankname FROM banks;")
+
+            return [i[0] for i in cursor.fetchall()]
+
     def chart_it(self, last_x_days: int = 30):
         with self._cursor() as cursor:
             cursor.execute("SELECT *  FROM bankexpensetype")
