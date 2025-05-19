@@ -1030,6 +1030,12 @@ class Banking(StatesGroup):
     child_expense = State()
     confirmation_expense = State()
     fetch_child_expense = State()
+    making_transaction = State()
+    making_transaction_1 = State()
+    making_transaction_2 = State()
+    making_transaction_3 = State()
+    making_transaction_4 = State()
+    making_transaction_5 = State()
 
 
 @dp.callback_query(F.data == "banking")
@@ -1318,12 +1324,205 @@ async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
 
 # ? ---------------- END | ADD EXPENSE ---------------
 # ~ ---------------- START | ADD TRANSACTION ---------------
+@dp.callback_query(lambda x: x.data == "make_transaction")
+async def make_transaction(call: types.CallbackQuery, state: FSMContext):
+    """Asks the user for his desire bank"""
+
+    await call.answer()
+
+    _ = bnk.show_all_banks()
+    builder = InlineKeyboardBuilder()
+    for i in _:
+        builder.button(text=i, callback_data=f"transaction_bank_{i}")
+    builder.adjust(3)
+    keyboard = builder.as_markup()
+
+    await call.message.answer(
+        text="Please Choose The Desired Bank:", reply_markup=keyboard
+    )
+    await state.set_state(Banking.making_transaction)
+
+
+@dp.callback_query(Banking.making_transaction)
+async def make_transaction_1(call: types.CallbackQuery, state: FSMContext):
+    """Asks user to send an amount"""
+    await call.message.delete()
+
+    bank = call.data.split("transaction_bank_")[1]
+
+    await call.answer(text=f"✅ {bank}")
+    await state.update_data(user_bank=bank)
+
+    await call.message.answer(
+        text="Now send me a <b>AMOUNT</b> of your purchase", parse_mode="HTML"
+    )
+    await state.set_state(Banking.making_transaction_1)
+
+
+@dp.message(Banking.making_transaction_1)
+async def make_transaction_1(msg: Message, state: FSMContext):
+    """Adds AMount to state and asks for main Task."""
+    try:
+        amount = float(msg.text)
+    except:
+        await msg.reply(
+            text="❌Please Enter a valid <b>NUMBER</b>❌", parse_mode="HTML"
+        )
+        await state.clear()
+        return
+
+    await state.update_data(user_amount=amount)
+    main_exp = bnk._get_all_parent_expenses()
+
+    if main_exp:
+
+        builder = InlineKeyboardBuilder()
+        for i in main_exp:
+            builder.button(text=i, callback_data=f"transaction_expense_{i}")
+        builder.adjust(2)
+
+        keyboard = builder.as_markup()
+        await msg.answer(
+            "Choose The Main Expense To Fetch its Sub-Expense: ", reply_markup=keyboard
+        )
+
+        await state.set_state(Banking.making_transaction_2)
+    else:
+        await msg.answer("<b>You dont have any main tasks, try adding one.</b>")
+
+
+@dp.callback_query(Banking.making_transaction_2)
+async def make_transaction_2(call: types.CallbackQuery, state: FSMContext):
+    """bring parent expense child expenses"""
+
+    parent = call.data.split("transaction_expense_")[1]
+
+    await call.answer(f"✅ {parent}")
+    await call.message.delete()
+
+    children = bnk._get_all_child_expenses(parent_name=parent)
+
+    if children:
+
+        builder = InlineKeyboardBuilder()
+        for i in children:
+            builder.button(text=i, callback_data=f"transaction_expense_ch_{i}")
+        builder.adjust(2)
+
+        keyboard = builder.as_markup()
+
+        await call.message.answer(
+            text="Now Select You'r <b>Sub</b>-Expense: ",
+            reply_markup=keyboard,
+            parse_mode="HTML",
+        )
+        await state.set_state(Banking.making_transaction_3)
+    else:
+        await call.message.answer(
+            text=f"<b>{parent} Has No Sub-expense;</b> Try add one", parse_mode="HTML"
+        )
+        await main_banking(call)
+        await state.clear()
+
+
+@dp.callback_query(Banking.making_transaction_3)
+async def make_transaction_3(call: types.CallbackQuery, state: FSMContext):
+    """Adds user Expense to the state and asks for description."""
+    expense = call.data.split("transaction_expense_ch_")[1]
+
+    await call.answer(f"✅ {expense}")
+
+    await state.update_data(user_expense=expense)
+
+    await call.message.answer(
+        f"🗞 Now Send me a DESCRIPTION of you'r work.\n\n<b>Send -1 to leave it empty.</b>",
+        parse_mode="HTML",
+    )
+
+    await state.set_state(Banking.making_transaction_4)
+
+
+@dp.message(Banking.making_transaction_4)
+async def make_transaction_4(msg: Message, state: FSMContext):
+    """CONFIRMATION"""
+
+    data = await state.get_data()
+    desc = msg.text
+
+    try:
+        if int(desc) == -1:
+            desc = None
+
+    except ValueError:
+        pass
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Yes", callback_data="confirm_transaction_yes"
+                ),
+                InlineKeyboardButton(text="No", callback_data="confirm_transaction_no"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Abort", callback_data="confirm_transaction_abort"
+                ),
+            ],
+        ]
+    )
+    await state.update_data(user_description=desc)
+    await msg.reply(
+        text=f"Adding :\n<b>BANK : </b>{data.get("user_bank")}\n<b>AMOUNT : </b>{data.get("user_amount")}\n<b>EXPENSE : </b>{data.get("user_expense")}\n<b>DESCRIPTION : </b>{desc}\n",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+
+    await state.set_state(Banking.making_transaction_4)
+
+
+@dp.callback_query(Banking.making_transaction_4)
+async def make_transaction_4(call: types.CallbackQuery, state: FSMContext):
+    """ADDING TO THE DB"""
+    conf = call.data.split("confirm_transaction_")[1]
+
+    if conf == "abort":
+        await call.answer("❌ ABORTING ...❌")
+        await state.clear()
+        await main_banking(call)
+        return
+
+    elif conf == "no":
+        await call.answer("❌ Canceling ...❌")
+        await state.clear()
+        await main_banking(call)
+        return
+
+    data = await state.get_data()
+
+    answer = bnk.make_transaction(
+        bank_name=data.get("user_bank"),
+        amount=data.get("user_amount"),
+        expense_type=data.get("user_expense"),
+        description=data.get("user_description"),
+    )
+
+    if answer:
+        await call.answer("✅ TRANSACTION ADDED ✅")
+        await state.clear()
+        await main_banking(call)
+        return
+
+    await call.answer("❌ TRANSACTION FAILED ❌", show_alert=True)
+    await state.clear()
+    await main_banking(call)
+    return
 
 
 # ~ ---------------- END | END TRANSACTION ---------------
 # * ---------------- START | SHOW EXPENSES ---------------
 @dp.callback_query(lambda x: x.data == "show_expenses")
-async def show_banks(call: types.CallbackQuery):
+async def show_expenses(call: types.CallbackQuery):
     """Ask user to select between showing all of the parent in 'bankexpensetype' or children."""
     await call.answer()
 
@@ -1344,7 +1543,7 @@ async def show_banks(call: types.CallbackQuery):
 
 
 @dp.callback_query(lambda x: x.data == "show_expenses__parent")
-async def show_banks_1(call: types.CallbackQuery):
+async def show_expenses_1(call: types.CallbackQuery):
     """Shows all of the parents in 'bankexpensetype'"""
 
     await call.answer()
@@ -1363,14 +1562,14 @@ async def show_banks_1(call: types.CallbackQuery):
                 "<b>You dont have any main tasks, try adding one.</b>"
             )
     except:
-        logger.exception("An exception in show_banks in telegram.py")
+        logger.exception("An exception in show_expenses in telegram.py")
         await call.message.answer(
             text="An Error Occurred; Check Log Files Or Try Later.", parse_mode="HTML"
         )
 
 
 @dp.callback_query(lambda x: x.data == "show_expenses__child")
-async def show_banks_2(call: types.CallbackQuery, state: FSMContext):
+async def show_expenses_2(call: types.CallbackQuery, state: FSMContext):
     """Shows a keyboard containing all of the main task for the user to select"""
     await call.answer()
     await call.message.delete()
@@ -1396,7 +1595,7 @@ async def show_banks_2(call: types.CallbackQuery, state: FSMContext):
 
 
 @dp.callback_query(Banking.fetch_child_expense)
-async def show_banks_3(call: types.CallbackQuery):
+async def show_expenses_3(call: types.CallbackQuery, state: FSMContext):
     """Sends user the parents child expenses"""
 
     parent = call.data.split("child_expense__")[1]
@@ -1417,6 +1616,7 @@ async def show_banks_3(call: types.CallbackQuery):
             text=f"<b>{parent} Has No Sub-expense;</b> Try add one", parse_mode="HTML"
         )
         await main_banking(call)
+        await state.clear()
 
 
 # * ---------------- END | SHOW EXPENSES ---------------
