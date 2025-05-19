@@ -1029,11 +1029,13 @@ class Banking(StatesGroup):
     add_expense_2 = State()
     child_expense = State()
     confirmation_expense = State()
+    fetch_child_expense = State()
 
 
 @dp.callback_query(F.data == "banking")
 async def main_banking(call: types.CallbackQuery):
     """Shows banking keyboard."""
+
     if not is_admin(call.from_user.id):
         return
     call.answer()
@@ -1170,6 +1172,7 @@ async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
         await call.answer("❌ Aborting Adding Expense... ❌")
         try:
             await call.message.delete()
+            await state.clear()
         except:
             pass
 
@@ -1235,6 +1238,7 @@ async def choose_child_expense(call: types.CallbackQuery, state: FSMContext):
 
     call.answer()
     await call.message.delete()
+
     parent_answer = call.data.split("parent_expense_")[1]
     await state.update_data(parent_expense=parent_answer)
     data = await state.get_data()
@@ -1276,13 +1280,14 @@ async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
         await call.answer("❌ Cancelling ... ❌")
         await call.message.delete()
         await main_banking(call)
-
+        await state.clear()
         return
 
     elif _answer == "abort":
         await call.answer("❌ ABORTING ... ❌")
         await call.message.delete()
         await main_banking(call)
+        await state.clear()
         return
 
     expense_name = data.get("expense_name")
@@ -1301,12 +1306,14 @@ async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
 
         await call.message.delete()
         await main_banking(call)
+        await state.clear()
         return
     except Exception:
         logger.exception("An Exception in confirm_the_expense in telegram.py")
         await call.message.answer(
             "❌ An UnExpected Error Happened, Please Check Log Files or Try Again Later.❌"
         )
+        await state.clear()
 
 
 # ? ---------------- END | ADD EXPENSE ---------------
@@ -1314,14 +1321,109 @@ async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
 
 
 # ~ ---------------- END | END TRANSACTION ---------------
-# * ---------------- START | SHOW BANKS ---------------
+# * ---------------- START | SHOW EXPENSES ---------------
+@dp.callback_query(lambda x: x.data == "show_expenses")
+async def show_banks(call: types.CallbackQuery):
+    """Ask user to select between showing all of the parent in 'bankexpensetype' or children."""
+    await call.answer()
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="All main Expenses ", callback_data="show_expenses__parent"
+                ),
+                InlineKeyboardButton(
+                    text="Certain Sub Expenses", callback_data="show_expenses__child"
+                ),
+            ]
+        ]
+    )
+
+    await call.message.answer(text="Select :", reply_markup=keyboard)
 
 
-# * ---------------- END | SHOW BANKS ---------------
-# () ---------------- START | SHOW EXPENSES ---------------
+@dp.callback_query(lambda x: x.data == "show_expenses__parent")
+async def show_banks_1(call: types.CallbackQuery):
+    """Shows all of the parents in 'bankexpensetype'"""
+
+    await call.answer()
+    await call.message.delete()
+
+    try:
+        main_exp = bnk._get_all_parent_expenses()
+        if main_exp:
+            text = "<b>All Main Expenses:</b>\n\n" + "\n".join(
+                [f"{i}. {j}" for i, j in enumerate(main_exp, start=1)]
+            )
+
+            await call.message.answer(text=text, parse_mode="HTML")
+        else:
+            await call.message.answer(
+                "<b>You dont have any main tasks, try adding one.</b>"
+            )
+    except:
+        logger.exception("An exception in show_banks in telegram.py")
+        await call.message.answer(
+            text="An Error Occurred; Check Log Files Or Try Later.", parse_mode="HTML"
+        )
 
 
-# () ---------------- END | SHOW EXPENSES ---------------
+@dp.callback_query(lambda x: x.data == "show_expenses__child")
+async def show_banks_2(call: types.CallbackQuery, state: FSMContext):
+    """Shows a keyboard containing all of the main task for the user to select"""
+    await call.answer()
+    await call.message.delete()
+
+    main_exp = bnk._get_all_parent_expenses()
+
+    if main_exp:
+
+        builder = InlineKeyboardBuilder()
+        for i in main_exp:
+            builder.button(text=i, callback_data=f"child_expense__{i}")
+        builder.adjust(2)
+
+        keyboard = builder.as_markup()
+        await call.message.answer(
+            "Choose The Main Task To Fetch its Sub-Tasks: ", reply_markup=keyboard
+        )
+        await state.set_state(Banking.fetch_child_expense)
+    else:
+        await call.message.answer(
+            "<b>You dont have any main tasks, try adding one.</b>"
+        )
+
+
+@dp.callback_query(Banking.fetch_child_expense)
+async def show_banks_3(call: types.CallbackQuery):
+    """Sends user the parents child expenses"""
+
+    parent = call.data.split("child_expense__")[1]
+    await call.answer(f"✅ {parent}")
+    await call.message.delete()
+    children = bnk._get_all_child_expenses(parent_name=parent)
+
+    if children:
+
+        text = f"<b>{parent} children:\n\n</b>" + "\n".join(
+            [f"{i}. {j}" for i, j in enumerate(children, start=1)]
+        )
+
+        await call.message.answer(text=text, parse_mode="HTML")
+        await main_banking(call)
+    else:
+        await call.message.answer(
+            text=f"<b>{parent} Has No Sub-expense;</b> Try add one", parse_mode="HTML"
+        )
+        await main_banking(call)
+
+
+# * ---------------- END | SHOW EXPENSES ---------------
+# () ---------------- START | SHOW BANKS  ---------------
+
+
+# () ---------------- END | SHOW BANKS  ---------------
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
 async def main() -> None:
 
