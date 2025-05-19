@@ -1122,7 +1122,7 @@ async def continue_add_bank(call: types.CallbackQuery, state: FSMContext):
 
 
 # $ ---------------- END | ADD BANK ---------------
-# $ ---------------- START | ADD EXPENSE ---------------
+# ? ---------------- START | ADD EXPENSE ---------------
 @dp.callback_query(F.data == "add_an_expense")
 async def add_a_expense(call: types.CallbackQuery, state: FSMContext):
     """Asking the user to send a expense name"""
@@ -1309,7 +1309,19 @@ async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
         )
 
 
-# $ ---------------- END | ADD EXPENSE ---------------
+# ? ---------------- END | ADD EXPENSE ---------------
+# ~ ---------------- START | ADD TRANSACTION ---------------
+
+
+# ~ ---------------- END | END TRANSACTION ---------------
+# * ---------------- START | SHOW BANKS ---------------
+
+
+# * ---------------- END | SHOW BANKS ---------------
+# () ---------------- START | SHOW EXPENSES ---------------
+
+
+# () ---------------- END | SHOW EXPENSES ---------------
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
 async def main() -> None:
 
