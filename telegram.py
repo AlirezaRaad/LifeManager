@@ -1065,7 +1065,7 @@ async def main_banking(call: types.CallbackQuery):
 # $ ---------------- START | ADD BANK ---------------
 @dp.callback_query(F.data == "add_bank")
 async def add_a_bank(call: types.CallbackQuery, state: FSMContext):
-    """Ask user to give bank name"""
+    """Prompt to user to give bank name"""
     if not is_admin(call.from_user.id):
         return
     await call.answer()
@@ -1135,8 +1135,9 @@ async def add_a_expense(call: types.CallbackQuery, state: FSMContext):
 
 
 @dp.message(Banking.add_expense)
-async def add_a_expense_2(msg: Message, state: FSMContext):
+async def add_a_expense(msg: Message, state: FSMContext):
     """determine if the expense if a child or parent expense"""
+
     await state.update_data(expense_name=msg.text)
 
     builder = InlineKeyboardBuilder()
@@ -1159,7 +1160,7 @@ The Parent/Chile relation comes back at YOUR PERSPECTIVE of the subject.""",
 
 @dp.callback_query(Banking.add_expense_2)
 async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
-    """confirm if the expense is PARENT OR CHILD"""
+    """Redirect to different parts based on being child or parent."""
 
     await call.message.delete()
 
@@ -1167,14 +1168,42 @@ async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
 
     if which == "abort":
         await call.answer("❌ Aborting Adding Expense... ❌")
-        await call.message.delete()
+        try:
+            await call.message.delete()
+        except:
+            pass
+
         await main_banking(call)
         return
 
     if which == "parent":
-
         await state.update_data(parent_expense=None)
-        await confirm_the_expense(call, state)
+        data = await state.get_data()
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Yes 👍", callback_data="confirm_expense_yes"
+                    ),
+                    InlineKeyboardButton(
+                        text="NO 👎", callback_data="confirm_expense_no"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Abort ❌", callback_data="confirm_expense_abort"
+                    )
+                ],
+            ]
+        )
+
+        await call.message.answer(
+            f"Do you want to add <b>{data.get("expense_name")}</b> as a <b>Parent?</b>",
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        await state.set_state(Banking.confirmation_expense)
 
     elif which == "child":
 
@@ -1202,8 +1231,10 @@ async def add_a_expense_2(call: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(Banking.child_expense)
 async def choose_child_expense(call: types.CallbackQuery, state: FSMContext):
-    call.answer()
+    """Get teh confirmation to add the child with its parent to the DB."""
 
+    call.answer()
+    await call.message.delete()
     parent_answer = call.data.split("parent_expense_")[1]
     await state.update_data(parent_expense=parent_answer)
     data = await state.get_data()
@@ -1234,8 +1265,48 @@ async def choose_child_expense(call: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(Banking.confirmation_expense)
 async def confirm_the_expense(call: types.CallbackQuery, state: FSMContext):
+    """By using CBanker.add_expense add the expense to the 'bankexpensetype' TABLE."""
+
     data = await state.get_data()
-    print(data)
+
+    _answer = call.data.split("confirm_expense_")[1]
+
+    if _answer == "no":
+
+        await call.answer("❌ Cancelling ... ❌")
+        await call.message.delete()
+        await main_banking(call)
+
+        return
+
+    elif _answer == "abort":
+        await call.answer("❌ ABORTING ... ❌")
+        await call.message.delete()
+        await main_banking(call)
+        return
+
+    expense_name = data.get("expense_name")
+    parent = data.get("parent_expense")
+
+    try:
+        if bnk.add_expense(expense_name=expense_name, ref_to=parent):
+            await call.answer(
+                f"✅Added {expense_name} as {"parent" if parent is None else f"child of {parent}"}✅"
+            )
+
+        else:
+            await call.answer(
+                f"❌Failed to Add {expense_name} as {"parent" if parent is None else f"child of {parent}"}❌"
+            )
+
+        await call.message.delete()
+        await main_banking(call)
+        return
+    except Exception:
+        logger.exception("An Exception in confirm_the_expense in telegram.py")
+        await call.message.answer(
+            "❌ An UnExpected Error Happened, Please Check Log Files or Try Again Later.❌"
+        )
 
 
 # $ ---------------- END | ADD EXPENSE ---------------
