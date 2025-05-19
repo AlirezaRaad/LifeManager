@@ -315,6 +315,17 @@ class CBanker(Cursor):
 
             return [i[0] for i in cursor.fetchall()]
 
+    def _get_all_child_expenses(self, parent_name) -> list:
+
+        parent = int(self.fetch_expense_id(parent_name))
+        with self._cursor() as cursor:
+            cursor.execute(
+                "SELECT expensename FROM bankexpensetype WHERE parentexpenseid = %s;",
+                (parent,),
+            )
+
+            return [i[0] for i in cursor.fetchall()]
+
     def chart_it(self, last_x_days: int = 30):
         with self._cursor() as cursor:
             cursor.execute("SELECT *  FROM bankexpensetype")

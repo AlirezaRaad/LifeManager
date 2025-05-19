@@ -113,3 +113,14 @@ class CBanker:
             list: list of parent expense.
         """
         ...
+
+    def _get_all_child_expenses(self, parent_name: str) -> list:
+        """Gets a parent name and searches for its children in bankexpensetype TABLE.
+
+        Args:
+            parent_name (str): you desired parent name
+
+        Returns:
+            list: empty list is it cant find the name or the name is child not parent, otherwise a list of children
+        """
+        ...
