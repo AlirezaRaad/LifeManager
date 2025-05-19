@@ -1423,7 +1423,15 @@ async def show_banks_3(call: types.CallbackQuery):
 # () ---------------- START | SHOW BANKS  ---------------
 @dp.callback_query(lambda x: x.data == "show_banks")
 async def show_banks(call: types.CallbackQuery):
-    print("alireza")
+    await call.answer()
+
+    _ = bnk.show_all_banks()
+
+    text = "<b>All Added Banks:</b>\n\n"
+
+    text += "\n".join([f"{i}. {j}" for i, j in enumerate(_, start=1)])
+
+    await call.message.answer(text=text, parse_mode="HTML")
 
 
 # () ---------------- END | SHOW BANKS  ---------------
