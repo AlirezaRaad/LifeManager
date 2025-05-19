@@ -1421,6 +1421,9 @@ async def show_banks_3(call: types.CallbackQuery):
 
 # * ---------------- END | SHOW EXPENSES ---------------
 # () ---------------- START | SHOW BANKS  ---------------
+@dp.callback_query(lambda x: x.data == "show_banks")
+async def show_banks(call: types.CallbackQuery):
+    print("alireza")
 
 
 # () ---------------- END | SHOW BANKS  ---------------
