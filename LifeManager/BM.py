@@ -475,7 +475,7 @@ class CBanker(Cursor):
 
         return True
 
-    def bank_first_init(self, bank_name):
+    def bank_first_init_time(self, bank_name: str) -> bool | dt.datetime:
         bnk_id = self.__fetch_bank_id(bank_name=bank_name)
         if not bnk_id:
             return False

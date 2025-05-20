@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Optional
 
 class CBanker:
@@ -147,3 +148,14 @@ class CBanker:
         Returns:
             bool : True if it makes an excel file for your data, otherwise false.
         """
+
+    def bank_first_init_time(self, bank_name: str) -> bool | dt.datetime:
+        """Gives a date of the banks, first initial.
+
+        Args:
+            bank_name (str): Your desired bank name.
+
+        Returns:
+            bool | dt.datetime: Return first initial date as datetime object, otherwise False.
+        """
+        ...
