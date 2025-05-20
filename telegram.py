@@ -1676,6 +1676,10 @@ async def banking_records__2(call: types.CallbackQuery, state: FSMContext):
 
     bank_name = call.data.split("bank_record_")[1]
     await call.answer(f"✅ {bank_name}")
+    try:
+        await call.message.delete()
+    except:
+        pass
 
     await state.update_data(user_bank_rec=bank_name)
 
@@ -1815,6 +1819,9 @@ async def banking_records_4(call: types.CallbackQuery, state: FSMContext):
         end_date=data.get("user_end_date"),
         bank_name=data.get("user_bank_rec"),
     )
+    await state.clear()
+    await main_banking(call)
+    return
 
 
 @dp.callback_query(lambda x: x.data == "bank_record_start")

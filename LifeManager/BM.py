@@ -458,12 +458,19 @@ class CBanker(Cursor):
             return False
 
         try:
+            fname = f"{bank_name} - {dt.datetime.now()}.xlsx"
             os.makedirs("Banking_records", exist_ok=True)
-            path = os.path.join("Banking_records", f"{dt.datetime.now()}.xlsx")
+            path = os.path.join("Banking_records", fname)
             df.to_excel(path)
-            return True
         except:
             logger.exception(
                 "An Error Occurred While Saving bank records into excel in Cbanker.fetch_records. "
             )
             return False
+
+        for filename in os.listdir("Banking_records"):
+            file_path = os.path.join("Banking_records", filename)
+            if filename != fname:
+                os.remove(file_path)
+
+        return True
