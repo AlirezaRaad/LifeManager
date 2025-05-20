@@ -474,3 +474,14 @@ class CBanker(Cursor):
                 os.remove(file_path)
 
         return True
+
+    def bank_first_init(self, bank_name):
+        bnk_id = self.__fetch_bank_id(bank_name=bank_name)
+        if not bnk_id:
+            return False
+
+        with self._cursor() as cursor:
+            cursor.execute(
+                "SELECT datetime FROM banker WHERE bankid = %s LIMIT 1", (bnk_id,)
+            )
+            return cursor.fetchone()[0]
