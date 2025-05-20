@@ -1737,16 +1737,18 @@ async def banking_records_1(msg: Message, state: FSMContext):
 
 
 @dp.callback_query(Banking.fetch_record_2)
-async def banking_records_2(call: types.CallbackQuery, state: FSMContext):
+async def banking_records_2(call: types.CallbackQuery, state: FSMContext, flag=True):
     """Asking the end date"""
 
-    _answer = call.data.split("Banking_fetch_record_1_")[1]
+    # ! Made this flag because in banking_records_2_1 I am about to call this function but if it want to split it it cause error and I dont want to use try-except
+    if flag:
+        _answer = call.data.split("Banking_fetch_record_1_")[1]
 
-    if _answer == "no":  # Stop it here...
-        await call.answer(text="❌ Cancelling...")
-        await state.clear()
-        await main_banking(call)
-        return
+        if _answer == "no":  # Stop it here...
+            await call.answer(text="❌ Cancelling...")
+            await state.clear()
+            await main_banking(call)
+            return
     await call.answer(text="✅")
 
     keyboard = InlineKeyboardMarkup(
@@ -1826,15 +1828,37 @@ async def banking_records_4(call: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(lambda x: x.data == "bank_record_start")
 async def banking_records_2_1(call: types.CallbackQuery, state: FSMContext):
+    """uses the bank first init as its start time"""
 
-    pass
+    await call.answer("✅")
+
+    try:
+        await call.message.delete()
+    except:
+        pass
+    data = await state.get_data()
+
+    start_ = bnk.bank_first_init_time(bank_name=data.get("user_bank_rec")).strftime(
+        "%Y-%m-%d"
+    )
+
+    await state.update_data(user_start_date=start_)
+
+    await banking_records_2(call, state, flag=False)
 
 
 @dp.callback_query(lambda x: x.data == "bank_record_end")
 async def banking_records_3_1(call: types.CallbackQuery, state: FSMContext):
+    """uses the current time as the end time"""
 
     data = await state.get_data()
+
     await call.answer(text="✅ Please Wait....")
+
+    try:
+        await call.message.delete()
+    except:
+        pass
 
     await banking_record_make_excel(
         call=call,
