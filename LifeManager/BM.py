@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import colormaps
 from psycopg2.errors import CheckViolation, DuplicateFunction, UniqueViolation
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from .Cursor import Cursor
 from .logger_config import logger
@@ -417,9 +417,7 @@ class CBanker(Cursor):
             )
             return False
 
-    def fetch_records(
-        self, start_date: str, end_date: Optional[str] = None
-    ) -> List[Tuple[str, str, float, float, dt.datetime, str]]:
+    def fetch_records(self, start_date: str, end_date: Optional[str] = None) -> bool:
         try:
             start_date = dt.datetime.strptime(start_date, "%Y-%m-%d")
 
@@ -431,14 +429,31 @@ class CBanker(Cursor):
             logger.exception(
                 "An Error while parsing the dates in Cbanker.fetch_records"
             )
-            return []  # ==> False
+            return False
         try:
-            with self._cursor() as cursor:
-                cursor.execute(
-                    "SELECT b.bankname, ext.expensename, br.amount, br.balance, br.datetime, br.description FROM banker br JOIN BANKS b ON b.id = br.bankid JOIN bankexpensetype ext ON ext.id = br.expensetype WHERE datetime < %s and datetime > %s",
-                    (end_date, start_date),
-                )
-                return cursor.fetchall()
+            engin = create_engine(
+                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+                pool_size=10,
+            )
+            query = text(
+                """SELECT b.bankname, ext.expensename, br.amount, br.balance, br.datetime, br.description 
+                FROM banker br JOIN BANKS b ON b.id = br.bankid JOIN bankexpensetype ext ON ext.id = br.expensetype 
+                WHERE br.datetime < :end_date and br.datetime > :start_date"""
+            )
+
+            params = {"start_date": start_date, "end_date": end_date}
+            df = pd.read_sql(query, engin, params=params)
         except:
             logger.exception("An Error while using cursor in Cbanker.fetch_records")
-            return []
+            return False
+
+        try:
+            os.makedirs("Banking_records", exist_ok=True)
+            path = os.path.join("Banking_records", f"{dt.datetime.now()}.xlsx")
+            df.to_excel(path)
+            return True
+        except:
+            logger.exception(
+                "An Error Occurred While Saving bank records into excel in Cbanker.fetch_records. "
+            )
+            return False

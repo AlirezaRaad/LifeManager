@@ -1,5 +1,4 @@
-import datetime as dt
-from typing import List, Optional, Tuple
+from typing import Optional
 
 class CBanker:
     """
@@ -132,15 +131,13 @@ class CBanker:
         """Show All of the Banks."""
         ...
 
-    def fetch_records(
-        self, start_date: str, end_date: Optional[str] = None
-    ) -> List[Tuple[str, str, float, float, dt.datetime, str]]:
-        """Fetches two dates as *YEAR-MONTH-DAY* format and returns all of the transactions between these two dates.
+    def fetch_records(self, start_date: str, end_date: Optional[str] = None) -> bool:
+        """Fetches two dates as *YEAR-MONTH-DAY* format and returns all of the transactions between these two dates in a excel file.
 
         Args:
             start_date (str): The Starting date in *YEAR-MONTH-DAY* format
             end_date (Optional[str], optional): Ending date in *YEAR-MONTH-DAY* format. Defaults to None; if sets to None, it gets current time.
 
         Returns:
-            List[Tuple[str, str, float, float, dt.datetime, str]]: Returns list of tuple with these headers: bankname, expensename, amount, balance, datetime, description
+            bool : True if it makes an excel file for your data, otherwise false.
         """
