@@ -6,6 +6,7 @@ from aiogram import F, types
 from dotenv import load_dotenv
 
 load_dotenv()
+import datetime as dt
 import random
 
 from aiogram import Bot, Dispatcher
@@ -1036,6 +1037,14 @@ class Banking(StatesGroup):
     making_transaction_3 = State()
     making_transaction_4 = State()
     making_transaction_5 = State()
+    fetch_record = State()
+    fetch_record_1 = State()
+    fetch_record_2 = State()
+    fetch_record_3 = State()
+    fetch_record_4 = State()
+    fetch_record_5 = State()
+    fetch_record_6 = State()
+    fetch_record_7 = State()
 
 
 @dp.callback_query(F.data == "banking")
@@ -1062,6 +1071,11 @@ async def main_banking(call: types.CallbackQuery):
             [
                 InlineKeyboardButton(text="Banks", callback_data="show_banks"),
                 InlineKeyboardButton(text="Expenses", callback_data="show_expenses"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Fetch Banking Records.", callback_data="banking_records"
+                )
             ],
             [InlineKeyboardButton(text="⬅️ Return", callback_data="/panel")],
         ]
@@ -1635,6 +1649,178 @@ async def show_banks(call: types.CallbackQuery):
 
 
 # () ---------------- END | SHOW BANKS  ---------------
+# () ---------------- START | BANKING RECORDS  ---------------
+@dp.callback_query(lambda x: x.data == "banking_records")
+async def banking_records(call: types.CallbackQuery, state: FSMContext):
+    """Prompt user to fetch the Bank Name."""
+
+    await call.answer()
+
+    builder = InlineKeyboardBuilder()
+    for i in bnk.show_all_banks():
+        builder.button(text=i, callback_data=f"bank_record_{i}")
+    builder.adjust(3)
+    keyboard = builder.as_markup()
+
+    await call.message.answer(
+        text="With this method you can Get your Banking Spent, between two dates for your desired BANK, Now First Select your desired <b>BANK</b>:",
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+    await state.set_state(Banking.fetch_record)
+
+
+@dp.callback_query(Banking.fetch_record)
+async def banking_records__2(call: types.CallbackQuery, state: FSMContext):
+    """Fetching bank name and then ask for a start date."""
+
+    bank_name = call.data.split("bank_record_")[1]
+    await call.answer(f"✅ {bank_name}")
+
+    await state.update_data(user_bank_rec=bank_name)
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="From First Initial", callback_data="bank_record_start"
+                )
+            ]
+        ]
+    )
+    await call.message.answer(
+        text="Now please Send Me an start date in <b>YEAR-MONTH-DAY</b> format:",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(Banking.fetch_record_1)
+
+
+@dp.message(Banking.fetch_record_1)
+async def banking_records_1(msg: Message, state: FSMContext):
+    """Fetches the start date in text from user, and prompt a yes/no question to go into callback_queries"""
+
+    try:
+        dt.datetime.strptime(msg.text, "%Y-%m-%d")
+    except:  # Value Error
+        msg.reply(
+            "❌ Please Send a Valid Date in <b>YEAR-MONTH-DAY</b> format ❌",
+            parse_mode="HTML",
+        )
+        return
+
+    await state.update_data(user_start_date=msg.text)
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Yes", callback_data="Banking_fetch_record_1_yes"
+                ),
+                InlineKeyboardButton(
+                    text="No", callback_data="Banking_fetch_record_1_no"
+                ),
+            ]
+        ]
+    )
+
+    await msg.reply(
+        text=f"Do You Want to use <b>{msg.text}</b> as your start date?",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(Banking.fetch_record_2)
+
+
+@dp.callback_query(Banking.fetch_record_2)
+async def banking_records_2(call: types.CallbackQuery, state: FSMContext):
+    """Asking the end date"""
+
+    _answer = call.data.split("Banking_fetch_record_1_")[1]
+
+    if _answer == "no":  # Stop it here...
+        await call.answer(text="❌ Cancelling...")
+        await state.clear()
+        await main_banking(call)
+        return
+    await call.answer(text="✅")
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Today", callback_data="bank_record_end")]
+        ]
+    )
+    await call.message.answer(
+        text="Now please Send Me an end date in <b>YEAR-MONTH-DAY</b> format:",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(Banking.fetch_record_3)
+
+
+@dp.message(Banking.fetch_record_3)
+async def banking_records_3(msg: Message, state: FSMContext):
+
+    try:
+        dt.datetime.strptime(msg.text, "%Y-%m-%d")
+    except:  # Value Error
+        msg.reply(
+            "❌ Please Send a Valid Date in <b>YEAR-MONTH-DAY</b> format ❌",
+            parse_mode="HTML",
+        )
+        return
+
+    await state.update_data(user_end_date=msg.text)
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Yes", callback_data="Banking_fetch_record_3_yes"
+                ),
+                InlineKeyboardButton(
+                    text="No", callback_data="Banking_fetch_record_3_no"
+                ),
+            ]
+        ]
+    )
+
+    await msg.reply(
+        text=f"Do You Want to use <b>{msg.text}</b> as your end date?",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(Banking.fetch_record_4)
+
+
+@dp.callback_query(Banking.fetch_record_4)
+async def banking_records_4(call: types.CallbackQuery, state: FSMContext):
+    """Asking the end date"""
+
+    _answer = call.data.split("Banking_fetch_record_3_")[1]
+
+    if _answer == "no":  # Stop it here...
+        await call.answer(text="❌ Cancelling...")
+        await state.clear()
+        await main_banking(call)
+        return
+
+    await call.answer(text="✅ Please Wait....")
+
+    data = await state.get_data()
+
+
+@dp.callback_query(lambda x: x.data == "bank_record_start")
+async def banking_records_2_1(call: types.CallbackQuery, state: FSMContext):
+    print("Yea Buddy")
+
+
+@dp.callback_query(lambda x: x.data == "bank_record_end")
+async def banking_records_3_1(call: types.CallbackQuery, state: FSMContext):
+    print("Yea Buddyy")
+
+
+# () ---------------- END | BANKING RECORDS ---------------
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
 async def main() -> None:
 
