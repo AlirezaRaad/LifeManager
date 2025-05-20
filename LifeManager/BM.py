@@ -417,7 +417,14 @@ class CBanker(Cursor):
             )
             return False
 
-    def fetch_records(self, start_date: str, end_date: Optional[str] = None) -> bool:
+    def fetch_records(
+        self, bank_name, start_date: str, end_date: Optional[str] = None
+    ) -> bool:
+
+        bnk_id = self.__fetch_bank_id(bank_name=bank_name)
+        if not bnk_id:
+            return False
+
         try:
             start_date = dt.datetime.strptime(start_date, "%Y-%m-%d")
 
@@ -430,6 +437,7 @@ class CBanker(Cursor):
                 "An Error while parsing the dates in Cbanker.fetch_records"
             )
             return False
+
         try:
             engin = create_engine(
                 f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
@@ -438,11 +446,13 @@ class CBanker(Cursor):
             query = text(
                 """SELECT b.bankname, ext.expensename, br.amount, br.balance, br.datetime, br.description 
                 FROM banker br JOIN BANKS b ON b.id = br.bankid JOIN bankexpensetype ext ON ext.id = br.expensetype 
-                WHERE br.datetime < :end_date and br.datetime > :start_date"""
+                WHERE br.datetime < :end_date AND br.datetime > :start_date
+                AND b.id = :bank_id"""
             )
 
-            params = {"start_date": start_date, "end_date": end_date}
+            params = {"start_date": start_date, "end_date": end_date, "bank_id": bnk_id}
             df = pd.read_sql(query, engin, params=params)
+
         except:
             logger.exception("An Error while using cursor in Cbanker.fetch_records")
             return False

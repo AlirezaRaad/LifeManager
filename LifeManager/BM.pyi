@@ -131,10 +131,16 @@ class CBanker:
         """Show All of the Banks."""
         ...
 
-    def fetch_records(self, start_date: str, end_date: Optional[str] = None) -> bool:
-        """Fetches two dates as *YEAR-MONTH-DAY* format and returns all of the transactions between these two dates in a excel file.
+    def fetch_records(
+        self,
+        bank_name: str,
+        start_date: str,
+        end_date: Optional[str] = None,
+    ) -> bool:
+        """Fetches two dates as *YEAR-MONTH-DAY* format and returns all of the transactions between these two dates in a excel file for desired bank.
 
         Args:
+            bank_name (str): The Bank Name that you want to fetch data for.
             start_date (str): The Starting date in *YEAR-MONTH-DAY* format
             end_date (Optional[str], optional): Ending date in *YEAR-MONTH-DAY* format. Defaults to None; if sets to None, it gets current time.
 
