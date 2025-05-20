@@ -1826,12 +1826,25 @@ async def banking_records_4(call: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(lambda x: x.data == "bank_record_start")
 async def banking_records_2_1(call: types.CallbackQuery, state: FSMContext):
-    print("Yea Buddy")
+
+    pass
 
 
 @dp.callback_query(lambda x: x.data == "bank_record_end")
 async def banking_records_3_1(call: types.CallbackQuery, state: FSMContext):
-    print("Yea Buddyy")
+
+    data = await state.get_data()
+    await call.answer(text="✅ Please Wait....")
+
+    await banking_record_make_excel(
+        call=call,
+        start_date=data.get("user_start_date"),
+        end_date=dt.datetime.now().strftime("%Y-%m-%d"),
+        bank_name=data.get("user_bank_rec"),
+    )
+    await state.clear()
+    await main_banking(call)
+    return
 
 
 async def banking_record_make_excel(
