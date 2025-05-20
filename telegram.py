@@ -1795,7 +1795,7 @@ async def banking_records_3(msg: Message, state: FSMContext):
 
 @dp.callback_query(Banking.fetch_record_4)
 async def banking_records_4(call: types.CallbackQuery, state: FSMContext):
-    """Asking the end date"""
+    """Making excel file and give it back."""
 
     _answer = call.data.split("Banking_fetch_record_3_")[1]
 
@@ -1809,6 +1809,13 @@ async def banking_records_4(call: types.CallbackQuery, state: FSMContext):
 
     data = await state.get_data()
 
+    await banking_record_make_excel(
+        call=call,
+        start_date=data.get("user_start_date"),
+        end_date=data.get("user_end_date"),
+        bank_name=data.get("user_bank_rec"),
+    )
+
 
 @dp.callback_query(lambda x: x.data == "bank_record_start")
 async def banking_records_2_1(call: types.CallbackQuery, state: FSMContext):
@@ -1818,6 +1825,14 @@ async def banking_records_2_1(call: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(lambda x: x.data == "bank_record_end")
 async def banking_records_3_1(call: types.CallbackQuery, state: FSMContext):
     print("Yea Buddyy")
+
+
+async def banking_record_make_excel(
+    call: types.CallbackQuery, start_date, end_date, bank_name
+):
+    bnk.fetch_records(start_date=start_date, end_date=end_date, bank_name=bank_name)
+    path = os.path.join("Banking_records", sorted(os.listdir("Banking_records"))[-1])
+    await call.message.answer_document(document=types.FSInputFile(path))
 
 
 # () ---------------- END | BANKING RECORDS ---------------
