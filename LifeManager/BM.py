@@ -336,6 +336,7 @@ class CBanker(Cursor):
             return [i[0] for i in cursor.fetchall()]
 
     def chart_it(self, last_x_days: int = 30):
+        os.makedirs("figures", exist_ok=True)
         with self._cursor() as cursor:
             cursor.execute("SELECT *  FROM bankexpensetype")
             _ = cursor.fetchall()

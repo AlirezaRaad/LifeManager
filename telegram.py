@@ -1881,6 +1881,35 @@ async def banking_record_make_excel(
 
 # () ---------------- END | BANKING RECORDS ---------------
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
+
+
+#! ------------------------------- END | CHARTING SECTION -------------------------------------
+class ChartingSection(StatesGroup):
+    pass
+
+
+@dp.callback_query(lambda x: x.data == "charting")
+async def charting(call: types.CallbackQuery, state: FSMContext):
+    """Prompt CHarting Keyboard"""
+
+    await call.answer()
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Banking Section", callback_data="banking_chart"
+                ),
+                InlineKeyboardButton(
+                    text="Tasks Section", callback_data="task_charting"
+                ),
+            ]
+        ]
+    )
+
+    await call.message.answer()
+
+
+#! ------------------------------- END | CHARTING SECTION -------------------------------------
 async def main() -> None:
 
     await dp.start_polling(bot)
