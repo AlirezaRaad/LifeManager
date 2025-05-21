@@ -15,6 +15,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 
+from aiogram.types import FSInputFile, InputMediaPhoto
 
 admins = [7860498898, 6739019257]
 from aiogram.fsm.context import FSMContext
@@ -1885,11 +1886,15 @@ async def banking_record_make_excel(
 
 #! ------------------------------- END | CHARTING SECTION -------------------------------------
 class ChartingSection(StatesGroup):
-    pass
+    task_1 = State()
+    task_2 = State()
+    task_3 = State()
+    task_4 = State()
+    task_5 = State()
 
 
 @dp.callback_query(lambda x: x.data == "charting")
-async def charting(call: types.CallbackQuery, state: FSMContext):
+async def charting(call: types.CallbackQuery):
     """Prompt CHarting Keyboard"""
 
     await call.answer()
@@ -1906,7 +1911,90 @@ async def charting(call: types.CallbackQuery, state: FSMContext):
         ]
     )
 
-    await call.message.answer()
+    await call.message.answer(text="What do you want to chart?", reply_markup=keyboard)
+
+
+@dp.callback_query(lambda x: x.data == "banking_chart")
+async def charting_b(call: types.CallbackQuery, state: FSMContext):
+    pass
+
+
+@dp.callback_query(lambda x: x.data == "task_charting")
+async def charting_t(call: types.CallbackQuery, state: FSMContext):
+
+    await call.answer(text="✅ Tasks")
+
+    await call.message.answer(
+        text="What week you want to chart?\nNOTE: If you want to chart the 17th <b>WEEK</b> of <b>YEAR</b>  2025 you should enter <b>y2025w17</b>",
+        parse_mode="HTML",
+    )
+    await state.set_state(ChartingSection.task_1)
+
+
+@dp.message(ChartingSection.task_1)
+async def charting_t_1(msg: Message, state: FSMContext):
+
+    week = msg.text
+
+    try:
+        [int(i) for i in week.split("y")[1].split("w")]
+    except ValueError:
+        await msg.reply(f"Invalid format : {week} \nCORRECT format ==> <b>y2025w17</b>")
+        return
+
+    await state.update_data(task_chart_week=week)
+
+    builder = InlineKeyboardBuilder()
+    for day in [
+        "Saturday",
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+    ]:
+        builder.button(text=day, callback_data=f"charting_start_{day.lower()}")
+
+    builder.adjust(3)
+    keyboard = builder.as_markup()
+
+    await msg.reply(
+        "Now select the first day of a week for charting:", reply_markup=keyboard
+    )
+
+    await state.set_state(ChartingSection.task_2)
+
+
+@dp.callback_query(ChartingSection.task_2)
+async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
+
+    day = call.data.split("charting_start_")[1]
+
+    data = await state.get_data()
+    week = data.get("task_chart_week")
+
+    try:
+
+        if not lm.chart_it(week=week, start_day=day):
+            await call.answer(text="❌ week {week} DOESN'T exists.")
+            await charting(call)
+            return
+
+        charts_path = [
+            InputMediaPhoto(media=FSInputFile(os.path.join("figures", filename)))
+            for filename in os.listdir("figures")
+            if not filename.startswith("bank")
+        ]
+        await call.answer(text="✅")
+        await bot.send_media_group(chat_id=call.message.chat.id, media=charts_path)
+        await charting(call)
+        return
+
+    except:
+        await call.answer(text="❌An Error Occurred.")
+        await charting(call)
+        return
 
 
 #! ------------------------------- END | CHARTING SECTION -------------------------------------
