@@ -1981,6 +1981,7 @@ async def charting_b_1(msg: Message):
         days = int(msg.text)
     except:
         await msg.reply(f"Please provide a number <b>{msg.text}</b> is not an number!")
+
         return
 
     if not bnk.chart_it(last_x_days=days):
@@ -2023,6 +2024,7 @@ async def charting_b_2(call: types.CallbackQuery, state: FSMContext):
             media=charts_path,
             reply_to_message_id=call.message.message_id,
         )
+        await state.clear()
     except:
         logger.exception(
             "An error in telegram charting_b_2 in sending files to telegram."
@@ -2030,6 +2032,7 @@ async def charting_b_2(call: types.CallbackQuery, state: FSMContext):
         await call.message.reply(
             f"There was an error in sending figures! Read Logs ..."
         )
+        await state.clear()
         return
 
 
@@ -2106,7 +2109,7 @@ async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
         "Thursday",
         "Friday",
     ]:
-        builder.button(text=day, callback_data=f"charting_start_{day.lower()}")
+        builder.button(text=day, callback_data=f"charting_start_{day}")
 
     builder.adjust(3)
     keyboard = builder.as_markup()
@@ -2133,6 +2136,7 @@ async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
                 text=f"❌ week {week} DOESN'T exists. Please add some task to your week",
                 show_alert=True,
             )
+            await state.clear()
             await charting(call)
             return
 
@@ -2143,11 +2147,13 @@ async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
         ]
         await call.answer(text="✅")
         await bot.send_media_group(chat_id=call.message.chat.id, media=charts_path)
+        await state.clear()
         await charting(call)
         return
 
     except:
         await call.answer(text="❌An Error Occurred.")
+        await state.clear()
         await charting(call)
         return
 
