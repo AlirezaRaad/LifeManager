@@ -2000,9 +2000,19 @@ async def charting_t(call: types.CallbackQuery, state: FSMContext):
 
     await call.answer(text="✅ Tasks")
 
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Current Week", callback_data="chart_task_current_week"
+                )
+            ]
+        ]
+    )
     await call.message.answer(
         text="What week you want to chart?\nNOTE: If you want to chart the 17th <b>WEEK</b> of <b>YEAR</b>  2025 you should enter <b>y2025w17</b>",
         parse_mode="HTML",
+        reply_markup=keyboard,
     )
     await state.set_state(ChartingSection.task_1)
 
@@ -2042,6 +2052,33 @@ async def charting_t_1(msg: Message, state: FSMContext):
     await state.set_state(ChartingSection.task_2)
 
 
+@dp.callback_query(ChartingSection.task_1)
+async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
+    await call.answer(f"✅ {lm.current_week_name}")
+    await state.update_data(task_chart_week=lm.current_week_name)
+
+    builder = InlineKeyboardBuilder()
+    for day in [
+        "Saturday",
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+    ]:
+        builder.button(text=day, callback_data=f"charting_start_{day.lower()}")
+
+    builder.adjust(3)
+    keyboard = builder.as_markup()
+
+    await call.message.reply(
+        "Now select the first day of a week for charting:", reply_markup=keyboard
+    )
+
+    await state.set_state(ChartingSection.task_2)
+
+
 @dp.callback_query(ChartingSection.task_2)
 async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
 
@@ -2053,7 +2090,10 @@ async def charting_t_2(call: types.CallbackQuery, state: FSMContext):
     try:
 
         if not lm.chart_it(week=week, start_day=day):
-            await call.answer(text="❌ week {week} DOESN'T exists.")
+            await call.answer(
+                text=f"❌ week {week} DOESN'T exists. Please add some task to your week",
+                show_alert=True,
+            )
             await charting(call)
             return
 
