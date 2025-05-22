@@ -383,7 +383,7 @@ class LifeManager(Cursor):
             return False
         except ProgrammingError:
             return False
-        # ? Making a deque for flags.
+        # ? Making a deque for flags
 
         flag: deque = deque(maxlen=3)
 
