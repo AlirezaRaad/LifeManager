@@ -369,15 +369,20 @@ class LifeManager(Cursor):
             week = self.current_week_name
 
         # Makes an engin to connect to psql using pandas.
-        engin = create_engine(
-            f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
-            pool_size=10,
-        )
+        try:
+            engin = create_engine(
+                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+                pool_size=10,
+            )
 
-        query = f"SELECT weekday,duration,taskname FROM {week} as t JOIN dailytasks as d ON t.taskid = d.id;"
+            query = f"SELECT weekday,duration,taskname FROM {week} as t JOIN dailytasks as d ON t.taskid = d.id;"
 
-        df = pd.read_sql(query, engin)
+            df = pd.read_sql(query, engin)
 
+        except UndefinedTable:
+            return False
+        except ProgrammingError:
+            return False
         # ? Making a deque for flags.
 
         flag: deque = deque(maxlen=3)
