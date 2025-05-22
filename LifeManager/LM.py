@@ -378,6 +378,7 @@ class LifeManager(Cursor):
             query = f"SELECT weekday,duration,taskname FROM {week} as t JOIN dailytasks as d ON t.taskid = d.id;"
 
             df = pd.read_sql(query, engin)
+            df["duration"] = df["duration"].apply(lambda x: round(x / 3600, 2))
 
         except UndefinedTable:
             return False
@@ -462,7 +463,7 @@ class LifeManager(Cursor):
                 fontweight="bold",
             )
             plt.ylabel(f"Day of the Week (Starts on {start_day})", fontsize=14)
-            plt.xlabel("Total Duration", fontsize=14)
+            plt.xlabel("Total Duration(In HOUR)", fontsize=14)
             plt.savefig(fname="figures/bar")
 
             flag.append(True)
@@ -503,7 +504,7 @@ class LifeManager(Cursor):
 
             plt.title("Weekly Total Duration")
             plt.xlabel("Week")
-            plt.ylabel("Total Duration")
+            plt.ylabel("Total Duration(In Hour)")
             plt.legend()
 
             plt.savefig(fname="figures/line")
