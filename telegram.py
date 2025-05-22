@@ -670,7 +670,7 @@ async def process_custom_duration(call: types.CallbackQuery, state: FSMContext):
         ]
     )
     await call.message.reply(
-        f"Use <b>{duration} {flag}<b> as the Time?",
+        f"Use <b>{duration} {flag}</b> as the Time?",
         reply_markup=keyboard,
         parse_mode="HTML",
     )
