@@ -4,9 +4,22 @@ version = "0.1.0"
 description = "A simple Python package"
 authors = [{name = "Raad", email = "alirezzaraadco@gmail.com"}]
 requires-python = ">=3.12"
-dependencies = ["numpy>=2.2.5","pandas>=2.2.3","python-dotenv>=1.1.0","psycopg2-binary>=2.9.10"]
-license = {}
+dependencies = [
+  "matplotlib>=3.10.1",
+  "sqlalchemy>=2.0.40",
+  "pandas>=2.2.3",
+  "python-dotenv>=1.1.0",
+  "psycopg2-binary>=2.9.10"
+]
+license = "MIT"
 readme = "README.md"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
 
 [project.urls]
 Homepage = "https://github.com/yourusername/LifeManager"
