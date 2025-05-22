@@ -1884,13 +1884,11 @@ async def banking_record_make_excel(
 #! ------------------------------- END | BANK MANAGER SECTION -------------------------------------
 
 
-#! ------------------------------- END | CHARTING SECTION -------------------------------------
+#! ------------------------------- START | CHARTING SECTION -------------------------------------
 class ChartingSection(StatesGroup):
     task_1 = State()
     task_2 = State()
-    task_3 = State()
-    task_4 = State()
-    task_5 = State()
+    bank_1 = State()
 
 
 @dp.callback_query(lambda x: x.data == "charting")
@@ -1907,18 +1905,96 @@ async def charting(call: types.CallbackQuery):
                 InlineKeyboardButton(
                     text="Tasks Section", callback_data="task_charting"
                 ),
-            ]
+            ],
+            [InlineKeyboardButton(text="⬅️ Return", callback_data="/panel")],
         ]
     )
 
     await call.message.answer(text="What do you want to chart?", reply_markup=keyboard)
 
 
+# ~ ------- CHART THE BANK -----
 @dp.callback_query(lambda x: x.data == "banking_chart")
 async def charting_b(call: types.CallbackQuery, state: FSMContext):
-    pass
+    await call.answer("✅")
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Last Month", callback_data="charting_bank_default"
+                )
+            ]
+        ]
+    )
+
+    await call.message.answer(
+        f"Now send me the <b>number of days</b> you want to look at you bank details?(eg. 10)",
+        parse_mode="HTML",
+        reply_markup=keyboard,
+    )
+    await state.set_state(ChartingSection.bank_1)
 
 
+@dp.message(ChartingSection.bank_1)
+async def charting_b_1(msg: Message):
+    try:
+        days = int(msg.text)
+    except:
+        await msg.reply(f"Please provide a number <b>{msg.text}</b> is not an number!")
+        return
+
+    if not bnk.chart_it(last_x_days=days):
+        await msg.reply(f"There was an error in charting! Try Again ...")
+        return
+
+    try:
+        charts_path = [
+            InputMediaPhoto(media=FSInputFile(os.path.join("figures", filename)))
+            for filename in os.listdir("figures")
+            if filename.startswith("bank")
+        ]
+        await bot.send_media_group(
+            chat_id=msg.chat.id, media=charts_path, reply_to_message_id=msg.message_id
+        )
+    except:
+        logger.exception(
+            "An error in telegram charting_b_1 in sending files to telegram."
+        )
+        await msg.reply(f"There was an error in sending figures! Read Logs ...")
+        return
+
+
+@dp.callback_query(ChartingSection.bank_1)
+async def charting_b_2(call: types.CallbackQuery, state: FSMContext):
+    days = 30
+    await call.answer("✅")
+    if not bnk.chart_it(last_x_days=days):
+        await call.message.reply(f"There was an error in charting! Try Again ...")
+        return
+
+    try:
+        charts_path = [
+            InputMediaPhoto(media=FSInputFile(os.path.join("figures", filename)))
+            for filename in os.listdir("figures")
+            if filename.startswith("bank")
+        ]
+        await bot.send_media_group(
+            chat_id=call.message.chat.id,
+            media=charts_path,
+            reply_to_message_id=call.message.message_id,
+        )
+    except:
+        logger.exception(
+            "An error in telegram charting_b_2 in sending files to telegram."
+        )
+        await call.message.reply(
+            f"There was an error in sending figures! Read Logs ..."
+        )
+        return
+
+
+# ~ ------- CHART THE TASKS -----
 @dp.callback_query(lambda x: x.data == "task_charting")
 async def charting_t(call: types.CallbackQuery, state: FSMContext):
 
