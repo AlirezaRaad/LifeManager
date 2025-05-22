@@ -529,6 +529,8 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
             "an Exception inside telegram.py module in insert_into_weekly_tables callback query handler."
         )
         return
+
+    await call.answer()
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -539,7 +541,7 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
             ],
             [
                 InlineKeyboardButton(
-                    text="Yes - Send Your Own time (IN SECONDS)",
+                    text="Yes - Send Your Own time",
                     callback_data="insert_duration_yup",
                 ),
             ],
@@ -552,7 +554,6 @@ async def insert_into_weekly_tables(call: types.CallbackQuery, state: FSMContext
     )
 
     await state.set_state(InsertingIntoTABLE.ask_duration)
-    await call.answer()
 
 
 @dp.callback_query(InsertingIntoTABLE.start_or_use_time)
@@ -601,9 +602,10 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
 
     elif data == "yup":
         await call.message.answer(
-            "Please Enter Your Custom Duration in <b>SECONDS</b?: ", parse_mode="HTML"
+            "Please Enter Your Custom Duration <b>(the Second/Hour/Minute will pop up after you entered this)</b> : ",
+            parse_mode="HTML",
         )
-        await state.set_state(InsertingIntoTABLE.custom_duration)
+        await state.set_state(InsertingIntoTABLE.custom_duration_H_M_S)
     else:
         await call.answer(
             f"❌ Did not use the {user_duration} as your time, Please Start the new Timer(if you want to have new Timer) and try again ❌",
