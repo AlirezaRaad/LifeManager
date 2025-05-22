@@ -485,7 +485,7 @@ class InsertingIntoTABLE(StatesGroup):
     ask_duration = State()
     custom_duration = State()
     custom_duration_confirmation = State()
-    # custom_duration_H_M_S = State()
+    custom_duration_H_M_S = State()
     which_task = State()
     which_child_task = State()
     update_which_task = State()
@@ -563,10 +563,12 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
     if data == "timer":
         await _timer(call)
     else:
+
         await call.message.answer(
-            "Please Enter Your Custom Duration in <b>SECONDS</b> : ", parse_mode="HTML"
+            "Please Enter Your Custom Duration(the Second/Hour/Minute will pop up after you entered this) : ",
+            parse_mode="HTML",
         )
-        await state.set_state(InsertingIntoTABLE.custom_duration)
+        await state.set_state(InsertingIntoTABLE.custom_duration_H_M_S)
 
 
 @dp.callback_query(InsertingIntoTABLE.ask_duration)
@@ -612,15 +614,50 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
         return
 
 
-@dp.message(InsertingIntoTABLE.custom_duration)
+@dp.message(InsertingIntoTABLE.custom_duration_H_M_S)
 async def process_custom_duration(msg: Message, state: FSMContext):
     try:
         custom_duration = int(msg.text)
+        await state.update_data(user_custom_duration=custom_duration)
     except Exception:
         await msg.reply("PLEASE ENTER A VALID NUMBER.\n❌ABORTING...❌")
         await state.clear()
         await main_panel(msg)
         return
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Hour", callback_data="custom_duration_1"),
+                InlineKeyboardButton(
+                    text="Minute", callback_data="custom_duration_0.5"
+                ),
+                InlineKeyboardButton(text="Seconds", callback_data="custom_duration_0"),
+            ]
+        ]
+    )
+
+    await msg.reply(f"What time entity is the time you sent?", reply_markup=keyboard)
+    await state.set_state(InsertingIntoTABLE.custom_duration)
+
+
+@dp.callback_query(InsertingIntoTABLE.custom_duration)
+async def process_custom_duration(call: types.CallbackQuery, state: FSMContext):
+
+    duration_aspect = float(call.data.split("custom_duration_")[1])
+    data = await state.get_data()
+    duration = data.get("user_custom_duration")
+    # Because I save sec in the db, I have to transform it
+    match duration_aspect:
+        case 1:  # hour
+            custom_duration = duration * 3600
+            flag = "Hour"
+        case 0.5:  # min
+            custom_duration = duration * 60
+            flag = "Minute"
+        case 0:  # sec
+            custom_duration = duration
+            flag = "Seconds"
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -632,7 +669,9 @@ async def process_custom_duration(msg: Message, state: FSMContext):
             ]
         ]
     )
-    await msg.reply(f"Use {custom_duration} as the Time?", reply_markup=keyboard)
+    await call.message.reply(
+        f"Use <b>{duration} {flag}<b> as the Time?", reply_markup=keyboard
+    )
     await state.update_data(custom_duration=custom_duration)
     await state.set_state(InsertingIntoTABLE.custom_duration_confirmation)
 
