@@ -104,7 +104,7 @@ def main_dmt_keyboard():
 
     builder.button(text="Timer", callback_data="timer")
     builder.button(text="Backup/Restore", callback_data="go_to_backups")
-    builder.button(text="Return", callback_data="/panel")
+    builder.button(text="⬅️ Return", callback_data="/panel")
     builder.adjust(2)
 
     return builder.as_markup()
@@ -274,7 +274,7 @@ async def end_timer(call: types.CallbackQuery):
                     InlineKeyboardButton(text="Yes", callback_data="timer_yes"),
                     InlineKeyboardButton(text="No", callback_data="timer_no"),
                 ],
-                [InlineKeyboardButton(text="Return", callback_data="timer")],
+                [InlineKeyboardButton(text="⬅️ Return", callback_data="timer")],
             ]
         )
 
@@ -565,7 +565,7 @@ async def process_duration(call: types.CallbackQuery, state: FSMContext):
     else:
 
         await call.message.answer(
-            "Please Enter Your Custom Duration(the Second/Hour/Minute will pop up after you entered this) : ",
+            "Please Enter Your Custom Duration <b>(the Second/Hour/Minute will pop up after you entered this)</b> : ",
             parse_mode="HTML",
         )
         await state.set_state(InsertingIntoTABLE.custom_duration_H_M_S)
@@ -670,7 +670,9 @@ async def process_custom_duration(call: types.CallbackQuery, state: FSMContext):
         ]
     )
     await call.message.reply(
-        f"Use <b>{duration} {flag}<b> as the Time?", reply_markup=keyboard
+        f"Use <b>{duration} {flag}<b> as the Time?",
+        reply_markup=keyboard,
+        parse_mode="HTML",
     )
     await state.update_data(custom_duration=custom_duration)
     await state.set_state(InsertingIntoTABLE.custom_duration_confirmation)
