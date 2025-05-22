@@ -188,7 +188,7 @@ class LifeManager(Cursor):
                     """CREATE TABLE IF NOT EXISTS {table} (
                                 id SERIAL PRIMARY KEY, 
                                 weekDay INT,
-                                duration NUMERIC(10,6) NOT NULL, 
+                                duration NUMERIC(12,2) NOT NULL, 
                                 taskID INT NOT NULL , 
                                 description TEXT,
                                 CONSTRAINT {const} FOREIGN KEY (taskID) REFERENCES dailytasks(id)
