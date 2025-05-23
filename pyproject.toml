@@ -9,7 +9,9 @@ dependencies = [
   "sqlalchemy>=2.0.40",
   "pandas>=2.2.3",
   "python-dotenv>=1.1.0",
-  "psycopg2-binary>=2.9.10"
+  "psycopg2-binary>=2.9.10",
+  "openpyxl>=3.1.5",
+  "aiogram==3.20.0.post0",
 ]
 license = "MIT"
 readme = "README.md"
@@ -17,9 +19,9 @@ readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/yourusername/LifeManager"
@@ -30,3 +32,6 @@ Issues = "https://github.com/yourusername/LifeManager/issues"
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["LifeManager","LifeManager.telegram"]
