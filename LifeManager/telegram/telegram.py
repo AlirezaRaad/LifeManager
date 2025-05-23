@@ -154,6 +154,12 @@ def dmt_backup_keyboard():
                     callback_data="backup_whole_folder",
                 )
             ],
+            [
+                InlineKeyboardButton(
+                    text="Back up log folder.",
+                    callback_data="backup_whole_log_folder",
+                )
+            ],
             [InlineKeyboardButton(text="⬅️ Return", callback_data="daily_task_manager")],
         ]
     )
@@ -1061,6 +1067,26 @@ async def backup_whole_folder(call: types.CallbackQuery):
     await call.message.answer_document(document=types.FSInputFile("BACKUP.zip"))
     if os.path.exists("BACKUP.zip"):
         os.remove("BACKUP.zip")
+
+
+@dp.callback_query(F.data == "backup_whole_log_folder")
+async def backup_whole_log_folder(call: types.CallbackQuery):
+    folder_path = os.path.join("log")
+
+    with zipfile.ZipFile("LOGS.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+
+                zipf.write(
+                    os.path.join(root, file),
+                    os.path.relpath(os.path.join(root, file), folder_path),
+                )
+
+    await call.answer("✅ Backup Successful ✅", parse_mode="HTML")
+    await call.message.answer_document(document=types.FSInputFile("LOGS.zip"))
+    if os.path.exists("LOGS.zip"):
+        os.remove("LOGS.zip")
 
 
 # ? ------------END | BACKUP -------------------
