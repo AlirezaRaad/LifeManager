@@ -76,7 +76,6 @@ class Config:
         with open(self.config_file, "w") as configfile:
             self.config.write(configfile)
 
-        print(f"Telegram bot enabled set to: {new_status}")
         return new_status
 
     def change_telegram_TOKEN(self, token: str) -> bool:
@@ -229,3 +228,8 @@ class Config:
         except:
             logger.exception(f"An error in config.__set_env_variable for `{full_text}`")
             return False
+
+    def fetch_telegram_flags(self):
+        first = self.config.getboolean("telegram", "enabled", fallback=False)
+        second = self.config.getboolean("telegram", "token", fallback=False)
+        return first and second
