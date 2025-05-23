@@ -19,7 +19,14 @@ pip install LifeManager
 
 Then Its time to set PostgreSQL <b>Username,Password,Host,port</b> :(If you know how to work with .env file, you can set it manually):
 ```python
-aaa
+from LifeManager.config import Config
+
+cfg = Config()
+
+cfg.change_PostgreSQL_user("your_username")
+cfg.change_PostgreSQL_password("your_password")
+cfg.change_PostgreSQL_host("your_host")   # e.g. "localhost"
+cfg.change_PostgreSQL_port(5432) # or your custom port
 ```
 
 ## How to use Telegram BOT
@@ -27,19 +34,50 @@ If you don't want to work with the CLI version and just simply work with the a t
 
 * first activate its flag with
 ```python
-activate the telegram flag # Remember That every time you run this you turn it on/off
+from LifeManager.config import Config
+
+cfg = Config()
+
+cfg.change_telegram_bot_status() # Remember That every time you run this you turn it on/off
 ```
 
 * Then, you have to provide a valid <b>TELEGRAM BOT TOKEN</b>(You can fetch it from <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer">BotFather</a>
 ) using:
 ```python
-set telegram token
+from LifeManager.config import Config
+
+cfg = Config()
+
+cfg.change_telegram_TOKEN(token="TELEGRAM_TOKEN")
+# Remember if you enter invalid token, you get an error when you want to start the bot not here!!
 ```
 
-* Now you Simply you can start/stop the bot with `start`/`stop` methods :
+* Now you simply can start/stop the bot with `start`/`stop` methods:
 
 ```python
-import asyincio and run the bot
+import asyncio
+from LifeManager.telegram_launcher import TelegramLauncher
+
+async def main():
+    launcher = TelegramLauncher()
+    
+    # Start the bot (checks flags, validates token, launches subprocess)
+    started = await launcher.start()
+    if not started:
+        return
+
+    # Keep the script running until interrupted
+    try:
+        print("Bot is running. Press Ctrl+C to stop.")
+        await asyncio.Event().wait()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # Stop the bot subprocess gracefully
+        await launcher.stop()
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 Your Done! Enjoy ....
@@ -69,7 +107,6 @@ In LifeManager Package we have several modules and one sub-package(telegramBOT) 
 
 Now I will Explain each module in depth.
 
-## BM Module
 ## BM Module
 
 The **BM module** provides a comprehensive class `CBanker` designed to manage banking data and transactions efficiently. It handles the creation and management of banking tables, allows you to add banks and expense types, make transactions, and retrieve bank records with ease.
@@ -196,11 +233,11 @@ if isinstance(df, pd.DataFrame):
     print(df.head())
 
 # 7. Generate charts
-ln.chart_it(start_day="Monday")
+lm.chart_it(start_day="Monday")
 
 # 8. Use banking features
-if ln.bank:
-    ln.bank.add_bank("MyFinance")
+if lm.bank:
+    lm.bank.add_bank("MyFinance")
 ```
 
 ## CTimer Module
