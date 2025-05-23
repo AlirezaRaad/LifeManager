@@ -13,6 +13,8 @@ load_dotenv(override=True)
 
 
 class TelegramLauncher:
+    def __init__(self):
+        self.process = None
 
     async def __check_flags(self) -> bool:
         c = Config()
@@ -63,9 +65,9 @@ class TelegramLauncher:
                 "Validating the token has FAILED; Please Enter valid telegram token..."
             )
         else:
+            logger.info("Launching Telegram bot via TelegramLauncher class...")
             print("✅ Telegram TOKEN Validated; Starting the telegramBOT...")
 
-            logger.info("Launching Telegram bot via TelegramLauncher class...")
             self.process = subprocess.Popen(
                 ["python", "-m", "LifeManager.telegram.telegram"]
             )
