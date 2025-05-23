@@ -72,8 +72,9 @@ async def main_panel(msg):
     builder.button(text="DTM", callback_data="daily_task_manager")
     builder.button(text="Banking", callback_data="banking")
     builder.button(text="Chartings", callback_data="charting")
+    builder.button(text="Backup/Restore", callback_data="go_to_backups")
 
-    builder.adjust(1)
+    builder.adjust(2)
 
     __keyboard = builder.as_markup()
     random_sticker = random.choice(list(greetings_stickers))
@@ -103,7 +104,7 @@ def main_dmt_keyboard():
     builder.button(text="Tasks", callback_data="go_to_tasks")
 
     builder.button(text="Timer", callback_data="timer")
-    builder.button(text="Backup/Restore", callback_data="go_to_backups")
+
     builder.button(text="⬅️ Return", callback_data="/panel")
     builder.adjust(2)
 
