@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import streamlit as st
 
 from LifeManager.LM import LifeManager
@@ -68,15 +70,12 @@ def main():
         except KeyError:
             pass
 
-        if st.button(label="Lock and Proceed"):
+        st.info("Click the button bellow to Lock and Proceed")
+        if st.button("Double CLICK..."):
             st.session_state.lock_first = True
             st.session_state.show_dropdown = False
 
     if st.session_state.show_dropdown is False:
-        if st.button(label="UnLock and Change"):
-
-            st.session_state.lock_first = False
-            st.session_state.show_dropdown = True
 
         if st.session_state["user_desired_task"][1] == "Add Daily Task":
             add_daily_task()
@@ -94,39 +93,88 @@ def main():
             chart_it()
 
 
-print(st.session_state)
-
-
 def add_daily_task():
-
+    st.divider()
+    st.info(
+        "The difference between **PARENT** and **CHILD** task is as following:\n\nA Parent task is a main and general task and a Child task is a sub-task.\n\nFor example For `Learning` **PARENT** task, The `Udemy` can be a sub-task of **CHILD** task because for me udemy is one of my learning resources."
+    )
     st.markdown(
         body="""<p style='font-size:24px;'><b>Please Fill :</b></p>""",
         unsafe_allow_html=True,
     )
 
-    _task = st.text_input(label=f"Please Enter the Task Name:")
+    _task = st.text_input(label=f"Please Enter the **Task Name**:")
+    parent_task = None
 
-    if st.checkbox(
-        "I want to ad this as a Child<",
+    x = st.checkbox(
+        "I want to ad this as a **Child**",
         help="Checking this box means that this task is child of another task.",
-    ):
-        lm.fe
+    )
+    if x:
+        parent_task = st.selectbox(
+            label="**Please Enter The Parent of your child:**",
+            options=lm.get_all_parent_tasks(),
+        )
+    st.divider()
+
+    st.warning(
+        f"""
+    **Confirmation Required**
+
+    You are about to add:
+    
+    - Task: {_task}
+    - Type: {"PARENT" if parent_task is None else f"CHILD OF {parent_task.upper()}"}
+
+    Please confirm.
+    """
+    )
+    print(parent_task)
+    if st.button("CONFIRM"):
+
+        if lm.add_daily_task(task_name=_task, ref_to=parent_task):
+
+            st.success("Successfully added to the DATABASE!")
+        else:
+            st.error("There was an error while adding to the DATABASE")
+
+    st.info("Click the button bellow to go to the MainPage:")
+
+    if st.button("Double CLICK.."):
+        st.session_state.lock_first = False
+        st.session_state.show_dropdown = True
 
 
 def chart_it():
-    pass
+    st.info("Click the button bellow to go to the MainPage:")
+
+    if st.button("Double CLICK...", key=uuid4()):
+        st.session_state.lock_first = False
+        st.session_state.show_dropdown = True
 
 
 def show_tasks():
-    pass
+    st.info("Click the button bellow to go to the MainPage:")
+
+    if st.button("Double CLICK...", key=uuid4()):
+        st.session_state.lock_first = False
+        st.session_state.show_dropdown = True
 
 
 def DataGuardian():
-    pass
+    st.info("Click the button bellow to go to the MainPage:")
+
+    if st.button("Double CLICK...", key=uuid4()):
+        st.session_state.lock_first = False
+        st.session_state.show_dropdown = True
 
 
 def insert_task():
-    pass
+    st.info("Click the button bellow to go to the MainPage:")
+
+    if st.button("Double CLICK...", key=uuid4()):
+        st.session_state.lock_first = False
+        st.session_state.show_dropdown = True
 
 
 if __name__ == "__main__":
