@@ -15,14 +15,19 @@ if "LifeManager" not in st.session_state:
 
 def main():
     global lm
-    st.header("Life Manager", divider="rainbow")
-    st.markdown(
-        """
+
+    if "LifeManager_main_header" not in st.session_state:
+        st.session_state.LifeManager_main_header = True
+
+    if st.session_state.LifeManager_main_header:
+        st.header("Life Manager", divider="rainbow")
+        st.markdown(
+            """
     <p style='font-size:24px;'>In this Part You have access to the all of the <em>LifeManger's tools</em></p>
 
     """,
-        unsafe_allow_html=True,
-    )
+            unsafe_allow_html=True,
+        )
 
     #! initiate a lock for user to lock the answers that I can fetch the informationS
     if "lock_first" not in st.session_state:
@@ -78,10 +83,17 @@ def main():
 
         st.info("Click the button bellow to Lock and Proceed")
 
+        # This button 1. disable previous fields 2.lock the drop down menus 3. disappear the main header
         st.button(
             "CLICK...",
             on_click=lambda: (
-                st.session_state.update({"lock_first": True, "show_dropdown": False})
+                st.session_state.update(
+                    {
+                        "lock_first": True,
+                        "show_dropdown": False,
+                        "LifeManager_main_header": False,
+                    }
+                )
             ),
         )
 
@@ -105,10 +117,19 @@ def main():
 
 def add_daily_task():
     global lm
-    st.divider()
-    st.info(
-        "The difference between **PARENT** and **CHILD** task is as following:\n\nA Parent task is a main and general task and a Child task is a sub-task.\n\nFor example For `Learning` **PARENT** task, The `Udemy` can be a sub-task of **CHILD** task because for me udemy is one of my learning resources."
+
+    st.header("Adding Tasks to the Database.", divider="red")
+    st.markdown(
+        """
+<p style='font-size:25px;color:lightgreen'> In this Section you will add task to the database as a <b>PARENT/CHILD</b>.
+The difference between PARENT and CHILD task is as following:</p> 
+
+<p style='font-size:25px;color:aqua'>A Parent task is a main and general task and a Child task is a sub-task.</p>
+
+<p style='font-size:25px'>For example For <font color="red">Learning</font> can be the PARENT task of <font color="red">Udemy</font>.""",
+        unsafe_allow_html=True,
     )
+
     st.markdown(
         body="""<p style='font-size:24px;'><b>Please Fill :</b></p>""",
         unsafe_allow_html=True,
@@ -163,7 +184,11 @@ def add_daily_task():
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
-            {"lock_first": False, "show_dropdown": True}
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
+            }
         ),
     )
 
@@ -175,7 +200,11 @@ def chart_it():
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
-            {"lock_first": False, "show_dropdown": True}
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
+            }
         ),
     )
 
@@ -187,7 +216,11 @@ def show_tasks():
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
-            {"lock_first": False, "show_dropdown": True}
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
+            }
         ),
     )
 
@@ -258,7 +291,11 @@ def DataGuardian():
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
-            {"lock_first": False, "show_dropdown": True}
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
+            }
         ),
     )
 
@@ -271,7 +308,11 @@ def insert_task():
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
-            {"lock_first": False, "show_dropdown": True}
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
+            }
         ),
     )
 
