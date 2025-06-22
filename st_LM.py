@@ -5,7 +5,9 @@ import streamlit as st
 from LifeManager.LM import LifeManager
 
 # Initiate the Life Manager instance
-lm = LifeManager()
+if "LifeManager" not in st.session_state:
+    lm = LifeManager()
+    st.session_state.LifeManager = True
 
 
 def main():
