@@ -1,16 +1,20 @@
+import os
 from uuid import uuid4
 
 import streamlit as st
+from dotenv import load_dotenv
 
 from LifeManager.LM import LifeManager
 
-# Initiate the Life Manager instance
+# Initiate the Life Manager instance and load the env variables.
 if "LifeManager" not in st.session_state:
+    load_dotenv()
     lm = LifeManager()
     st.session_state.LifeManager = True
 
 
 def main():
+    global lm
     st.header("Life Manager", divider="rainbow")
     st.markdown(
         """
@@ -100,6 +104,7 @@ def main():
 
 
 def add_daily_task():
+    global lm
     st.divider()
     st.info(
         "The difference between **PARENT** and **CHILD** task is as following:\n\nA Parent task is a main and general task and a Child task is a sub-task.\n\nFor example For `Learning` **PARENT** task, The `Udemy` can be a sub-task of **CHILD** task because for me udemy is one of my learning resources."
@@ -137,6 +142,7 @@ def add_daily_task():
     )
 
     def Confirm_add_daily_task():
+        global lm
         if lm.add_daily_task(task_name=_task, ref_to=parent_task):
             st.session_state.feedback = True
         else:
@@ -163,6 +169,7 @@ def add_daily_task():
 
 
 def chart_it():
+    global lm
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
         "CLICK...",
@@ -174,6 +181,7 @@ def chart_it():
 
 
 def show_tasks():
+    global lm
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
         "CLICK...",
@@ -185,7 +193,66 @@ def show_tasks():
 
 
 def DataGuardian():
+    global lm
 
+    #! Implemented a state variable to TRACK the readiness of backup
+    if "backup_ready" not in st.session_state:
+        st.session_state.backup_ready = False
+
+    if st.button("Backup Now"):
+
+        if lm.backup():
+            st.session_state.backup_ready = True
+            st.success("Generating backup was successful")
+        else:
+            st.session_state.backup_ready = False
+            st.error("An error has occurred during producing a backup file.")
+
+    # ~ When backup created, fetch the last backup from backup folder then upload it.
+    if st.session_state.backup_ready:
+
+        last_backup = sorted(os.listdir("backup"))[-1]
+        backup_path = os.path.abspath(
+            os.path.join(os.environ["BACKUP_PATH"], last_backup)
+        )
+
+        with open(backup_path, "rb") as fh:
+            file_bytes = fh.read()
+
+        st.download_button(
+            label="Download Latest Backup",
+            data=file_bytes,
+            file_name=last_backup,
+            mime="application/octet-stream",
+        )
+
+    st.markdown("<hr style='border: 1px solid aqua;'>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader(
+        "Upload your backup DATABASE file here or leave is empty for RESTORING THE Latest update."
+    )
+
+    if uploaded_file is not None:
+
+        with open("temp_backup_file", "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        if st.button("Restore Backup"):
+            success = lm.restore_backup(backup_path="temp_backup_file")
+
+            if success:
+                st.success("Backup restored successfully!")
+            else:
+                st.error("Failed to restore backup.")
+    else:
+        if st.button("Restore Backup"):
+            success = lm.restore_backup()
+
+            if success:
+                st.success("Backup restored successfully!")
+            else:
+                st.error("Failed to restore backup.")
+
+    st.markdown("<hr style='border: 1px solid red;'>", unsafe_allow_html=True)
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
         "CLICK...",
@@ -197,6 +264,7 @@ def DataGuardian():
 
 
 def insert_task():
+    global lm
 
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
