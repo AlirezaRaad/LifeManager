@@ -1,20 +1,18 @@
 import os
 from uuid import uuid4
+from zipfile import ZipFile
 
 import streamlit as st
 from dotenv import load_dotenv
 
 from LifeManager.LM import LifeManager
 
-# Initiate the Life Manager instance and load the env variables.
-if "LifeManager" not in st.session_state:
-    load_dotenv()
-    lm = LifeManager()
-    st.session_state.LifeManager = True
-
 
 def main():
-    global lm
+    # Initiate the Life Manager instance and load the env variables.
+    if "LifeManager" not in st.session_state:
+        load_dotenv()
+        st.session_state.LifeManager = LifeManager()
 
     if "LifeManager_main_header" not in st.session_state:
         st.session_state.LifeManager_main_header = True
@@ -116,7 +114,7 @@ def main():
 
 
 def add_daily_task():
-    global lm
+    lm: LifeManager = st.session_state.LifeManager
 
     st.header("Adding Tasks to the Database.", divider="red")
     st.markdown(
@@ -163,7 +161,7 @@ The difference between PARENT and CHILD task is as following:</p>
     )
 
     def Confirm_add_daily_task():
-        global lm
+        lm: LifeManager = st.session_state.LifeManager
         if lm.add_daily_task(task_name=_task, ref_to=parent_task):
             st.session_state.feedback = True
         else:
@@ -194,23 +192,144 @@ The difference between PARENT and CHILD task is as following:</p>
 
 
 def chart_it():
-    global lm
+    lm: LifeManager = st.session_state.LifeManager
+
+    st.header("Charting Section", divider="rainbow")
+
+    all_weeks = [i for i in lm.show_all_tables() if i.startswith("y")]
+
+    selected_week = st.selectbox(
+        label="Please Choose the week that you desire to see your stats: ",
+        options=all_weeks,
+        index=(len(all_weeks) - 2),
+    )
+    days_of_week = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+
+    selected_default_day = st.selectbox(
+        label="Please Enter the day which week starts in you'r region",
+        options=days_of_week,
+        index=6,
+    )
+
+    def show_image():
+        pics = [
+            ("line.png", "Line Chart Indicating Your recorded time over weeks"),
+            ("pie.png", "Detailed Data on What Hour You Spent On What"),
+            (
+                "bar.png",
+                "Detailed Data on which day of the week you were how many hour productive",
+            ),
+        ]
+
+        pics_path = [
+            (os.path.join(os.environ["FIGURES_PATH"], i[0]), i[1]) for i in pics
+        ]
+
+        for image, caption in pics_path:
+            st.image(image, caption=caption)
+
+    if st.button("Show the Week's Status", type="primary"):
+        if lm.chart_it(week=selected_week, start_day=selected_default_day):
+            st.success("The Figures Are Ready")
+            show_image()
+        else:
+            st.error("A problem occurred while making the figures")
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.header(body="Download Figures", divider="rainbow")
+
+    desired_chart = st.selectbox(
+        label="Please Choose the Chart(s) to Download: ",
+        options=["Line Chart", "Pie Chart", "Bar Chart", "All Charts"],
+        index=3,
+    )
+
+    def binary_pics(chart_type):
+
+        chart_types = {"line": "line", "pie": "pie", "bar": "bar"}
+
+        filename = f"{chart_types[chart_type]}.png"
+        path = os.path.join(os.environ["FIGURES_PATH"], filename)
+
+        with open(path, "rb") as fh:
+            return fh.read()
+
+    flag = [
+        os.path.exists(j)
+        for j in {
+            os.path.join(os.environ["FIGURES_PATH"], i)
+            for i in ["line.png", "pie.png", "bar.png"]
+        }
+    ]
+
+    if flag[0] and flag[1] and flag[2]:
+        match desired_chart:
+            case _ if desired_chart.startswith("P"):
+                st.download_button(
+                    label="Line", data=binary_pics("line"), file_name="line.png"
+                )
+
+            case _ if desired_chart.startswith("L"):
+                st.download_button(
+                    label="Pie", data=binary_pics("pie"), file_name="pie.png"
+                )
+
+            case _ if desired_chart.startswith("B"):
+                st.download_button(
+                    label="Bar", data=binary_pics("bar"), file_name="bar.png"
+                )
+
+            case _:
+                zip_path = os.path.join(os.environ["FIGURES_PATH"], "LM_figures.zip")
+                with ZipFile(zip_path, "w") as zipfh:
+                    paths = {
+                        os.path.join(os.environ["FIGURES_PATH"], i)
+                        for i in ["line.png", "pie.png", "bar.png"]
+                    }
+                    for i in paths:
+                        zipfh.write(i, arcname=i)
+
+                with open(zip_path, "rb") as fh:
+                    zip_content = fh.read()
+
+                st.download_button(
+                    label="All", data=zip_content, file_name="all_files.zip"
+                )
+    st.divider()
     st.info("Click the button bellow to go to the MainPage:")
-    st.button(
-        "CLICK...",
-        key=str(uuid4()),
-        on_click=lambda: st.session_state.update(
+
+    def back_to_main():
+        st.session_state.update(
             {
                 "lock_first": False,
                 "show_dropdown": True,
                 "LifeManager_main_header": True,
             }
         ),
-    )
+
+        #! using list comprehension to remove files and since no variable will point to this, GC will remove it.
+
+        [
+            os.remove(i) if os.path.exists(i) else None
+            for i in {
+                os.path.join(os.environ["FIGURES_PATH"], i)
+                for i in ["line.png", "pie.png", "bar.png", "LM_figures.zip"]
+            }
+        ]
+
+    st.button("CLICK...", key=str(uuid4()), on_click=back_to_main)
 
 
 def show_tasks():
-    global lm
+    lm: LifeManager = st.session_state.LifeManager
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
         "CLICK...",
@@ -226,7 +345,7 @@ def show_tasks():
 
 
 def DataGuardian():
-    global lm
+    lm: LifeManager = st.session_state.LifeManager
 
     #! Implemented a state variable to TRACK the readiness of backup
     if "backup_ready" not in st.session_state:
@@ -301,7 +420,7 @@ def DataGuardian():
 
 
 def insert_task():
-    global lm
+    lm: LifeManager = st.session_state.LifeManager
 
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
