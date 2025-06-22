@@ -313,7 +313,9 @@ class LifeManager(Cursor):
 
         if backup_path == "latest":
             backup_path = os.path.abspath(
-                os.path.join("backup", sorted(os.listdir("backup"))[-1])
+                os.path.join(
+                    os.environ["BACKUP_PATH"], sorted(os.listdir("backup"))[-1]
+                )
             )
         restore_command = (
             f"pg_restore  -d workmanager --clean --if-exists {backup_path}"
