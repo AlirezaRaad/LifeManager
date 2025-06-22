@@ -6,7 +6,7 @@ import streamlit as st
 from st_BM import main as bnk
 from st_home import main as home
 
-from st_LM import main as lm
+from LifeManager.LocalUI.st_LM import main as lm
 
 
 def main():

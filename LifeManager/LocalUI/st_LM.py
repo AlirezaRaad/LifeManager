@@ -2,6 +2,7 @@ import os
 from uuid import uuid4
 from zipfile import ZipFile
 
+import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -34,7 +35,7 @@ def main():
     # * Some Options for drop sown box
     options = {
         "Add Daily Task": None,
-        "Show Tasks": ["Parent", "Child", "Child Of", "All"],
+        "Show Tasks": None,
         "Insert A task to DB": None,
         "DataGuardian": {"Backup", "Restore"},
         "Charting": None,
@@ -330,6 +331,32 @@ def chart_it():
 
 def show_tasks():
     lm: LifeManager = st.session_state.LifeManager
+
+    st.header("All Tasks", divider="green")
+    st.markdown(
+        """<p style='font-size:24px;color:aqua'>All the tasks that you added to the DATABASE. </p>""",
+        unsafe_allow_html=True,
+    )
+
+    parent = pd.DataFrame(lm.get_all_parent_tasks(), columns=["Parent Tasks"])
+    child = pd.DataFrame(lm.fetch_all_non_parent_tasks(), columns=["Child Tasks"])
+
+    st.header("Parent Tasks", divider="violet")
+    st.dataframe(parent)
+
+    st.header("Child Tasks", divider="rainbow")
+
+    st.dataframe(child)
+
+    st.header("Child of Certain Tasks", divider="orange")
+    _task = st.selectbox(label="Select the Parent Task:", options=parent)
+
+    st.dataframe(
+        pd.DataFrame(
+            lm.fetch_child_tasks_of(_task), columns=[f"Child Tasks of {_task}"]
+        )
+    )
+
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
         "CLICK...",
