@@ -50,7 +50,7 @@ def main():
 
             # Second dropdown: Depends on first selection
             sub_item = st.selectbox(
-                label="Select an Calculation Strategy:",
+                label="Select Sub-category:",
                 options=options[category],
                 disabled=st.session_state.lock_first,
             )
@@ -71,9 +71,13 @@ def main():
             pass
 
         st.info("Click the button bellow to Lock and Proceed")
-        if st.button("Double CLICK..."):
-            st.session_state.lock_first = True
-            st.session_state.show_dropdown = False
+
+        st.button(
+            "CLICK...",
+            on_click=lambda: (
+                st.session_state.update({"lock_first": True, "show_dropdown": False})
+            ),
+        )
 
     if st.session_state.show_dropdown is False:
 
@@ -129,52 +133,76 @@ def add_daily_task():
     Please confirm.
     """
     )
-    print(parent_task)
-    if st.button("CONFIRM"):
 
+    def Confirm_add_daily_task():
         if lm.add_daily_task(task_name=_task, ref_to=parent_task):
+            st.session_state.feedback = True
+        else:
+            st.session_state.feedback = False
 
+    st.button(label="CONFIRM", on_click=Confirm_add_daily_task)
+    if "feedback" in st.session_state:
+        if st.session_state.feedback:
             st.success("Successfully added to the DATABASE!")
         else:
             st.error("There was an error while adding to the DATABASE")
 
+    st.markdown("<hr style='border: 1px solid red;'>", unsafe_allow_html=True)
+
     st.info("Click the button bellow to go to the MainPage:")
 
-    if st.button("Double CLICK.."):
-        st.session_state.lock_first = False
-        st.session_state.show_dropdown = True
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {"lock_first": False, "show_dropdown": True}
+        ),
+    )
 
 
 def chart_it():
     st.info("Click the button bellow to go to the MainPage:")
-
-    if st.button("Double CLICK...", key=uuid4()):
-        st.session_state.lock_first = False
-        st.session_state.show_dropdown = True
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {"lock_first": False, "show_dropdown": True}
+        ),
+    )
 
 
 def show_tasks():
     st.info("Click the button bellow to go to the MainPage:")
-
-    if st.button("Double CLICK...", key=uuid4()):
-        st.session_state.lock_first = False
-        st.session_state.show_dropdown = True
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {"lock_first": False, "show_dropdown": True}
+        ),
+    )
 
 
 def DataGuardian():
-    st.info("Click the button bellow to go to the MainPage:")
 
-    if st.button("Double CLICK...", key=uuid4()):
-        st.session_state.lock_first = False
-        st.session_state.show_dropdown = True
+    st.info("Click the button bellow to go to the MainPage:")
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {"lock_first": False, "show_dropdown": True}
+        ),
+    )
 
 
 def insert_task():
     st.info("Click the button bellow to go to the MainPage:")
-
-    if st.button("Double CLICK...", key=uuid4()):
-        st.session_state.lock_first = False
-        st.session_state.show_dropdown = True
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {"lock_first": False, "show_dropdown": True}
+        ),
+    )
 
 
 if __name__ == "__main__":
