@@ -1,3 +1,4 @@
+import os
 from uuid import uuid4
 
 import pandas as pd
@@ -227,7 +228,51 @@ def banking_record():
 
 
 def bnk_charting():
-    pass
+    bnk: CBanker = st.session_state.Banker
+
+    st.header("Charting Section")
+    st.markdown("---")
+    st.info(
+        """
+If you **don’t see your bank chart or chart** after clicking the button **Add All**,  
+try to **add a transaction** to update the data.
+"""
+    )
+
+    last_x_days = st.text_input(
+        label="Transaction Period (in days):",
+        help="Enter a number like 10 to view transactions from the last 10 days.",
+        placeholder="e.g., 10",
+    )
+
+    try:
+        last_x_days_int = int(last_x_days)
+    except (ValueError, TypeError):
+        last_x_days_int = None
+        if last_x_days:
+            st.error("Please enter a valid number for days.")
+
+    def show_image():
+        figures_dir = os.environ.get("FIGURES_PATH", "figures")
+
+        pics = [i for i in os.listdir(figures_dir) if i.startswith("bank_")]
+
+        pics_path = [(os.path.join(figures_dir, i), f"{i} Bank") for i in pics]
+
+        for image_path, caption in pics_path:
+            st.image(image_path, caption=caption)
+
+    if last_x_days_int:
+        if st.button("Show the Week's Status", type="primary"):
+            try:
+                if bnk.chart_it(last_x_days=last_x_days_int):
+                    st.success("The Figures Are Ready")
+                    show_image()
+                else:
+                    st.error("A problem occurred while making the figures")
+            except Exception as e:
+                st.error("A problem occurred while making the figures")
+                st.write(f"Error details: {e}")
 
 
 if __name__ == "__main__":
