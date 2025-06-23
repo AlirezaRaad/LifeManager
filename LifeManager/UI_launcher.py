@@ -14,4 +14,7 @@ env["PYTHONPATH"] = project_root + os.pathsep + env.get("PYTHONPATH", "")
 module_path = os.path.join(project_root, "LocalUI", "main.py")
 
 # Run streamlit with modified env
-subprocess.run(["streamlit", "run", module_path, "--server.port", "8569"], env=env)
+subprocess.run(
+    ["streamlit", "run", module_path, "--server.port", "8569"],
+    env=env,
+)
