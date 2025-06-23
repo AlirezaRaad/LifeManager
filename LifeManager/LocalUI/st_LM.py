@@ -357,14 +357,9 @@ def show_tasks():
     )
 
     parent = pd.DataFrame(lm.get_all_parent_tasks(), columns=["Parent Tasks"])
-    child = pd.DataFrame(lm.fetch_all_non_parent_tasks(), columns=["Child Tasks"])
 
     st.header("Parent Tasks", divider="violet")
     st.dataframe(parent)
-
-    st.header("Child Tasks", divider="rainbow")
-
-    st.dataframe(child)
 
     st.header("Child of Certain Tasks", divider="orange")
     _task = st.selectbox(label="Select the Parent Task:", options=parent)
