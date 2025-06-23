@@ -7,6 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from LifeManager.LM import LifeManager
+from LifeManager.TM import CTimer
 
 
 def main():
@@ -14,6 +15,9 @@ def main():
     if "LifeManager" not in st.session_state:
         load_dotenv()
         st.session_state.LifeManager = LifeManager()
+
+    if "Timer" not in st.session_state:
+        st.session_state.Timer = CTimer()
 
     if "LifeManager_main_header" not in st.session_state:
         st.session_state.LifeManager_main_header = True
@@ -96,6 +100,9 @@ def main():
             ),
         )
 
+    # ~ This only when the user clicked the above button will be True and then it redirects.
+    # ~ Later when we will back at the main, this will be False again..
+
     if st.session_state.show_dropdown is False:
 
         if st.session_state["user_desired_task"][1] == "Add Daily Task":
@@ -105,7 +112,7 @@ def main():
             show_tasks()
 
         if st.session_state["user_desired_task"][1] == "Insert A task to DB":
-            pass
+            insert_task()
 
         if st.session_state["user_desired_task"][1] == "DataGuardian":
             DataGuardian()
@@ -134,9 +141,11 @@ The difference between PARENT and CHILD task is as following:</p>
         unsafe_allow_html=True,
     )
 
+    #! Present the user a text input to put something in it; Simultiansly Make the parent_task variable.
     _task = st.text_input(label=f"Please Enter the **Task Name**:")
     parent_task = None
 
+    # $ This Check box indicate that if user want to the `_task` variable be a Parent or a Child.
     x = st.checkbox(
         "I want to ad this as a **Child**",
         help="Checking this box means that this task is child of another task.",
@@ -162,6 +171,7 @@ The difference between PARENT and CHILD task is as following:</p>
     )
 
     def Confirm_add_daily_task():
+        """This function tries to add the task to the database then we make a flag for after clicking the bellow button."""
         lm: LifeManager = st.session_state.LifeManager
         if lm.add_daily_task(task_name=_task, ref_to=parent_task):
             st.session_state.feedback = True
@@ -169,6 +179,7 @@ The difference between PARENT and CHILD task is as following:</p>
             st.session_state.feedback = False
 
     st.button(label="CONFIRM", on_click=Confirm_add_daily_task)
+
     if "feedback" in st.session_state:
         if st.session_state.feedback:
             st.success("Successfully added to the DATABASE!")
@@ -202,7 +213,7 @@ def chart_it():
     selected_week = st.selectbox(
         label="Please Choose the week that you desire to see your stats: ",
         options=all_weeks,
-        index=(len(all_weeks) - 2),
+        index=(len(all_weeks) - 1),
     )
     days_of_week = [
         "Monday",
@@ -217,10 +228,12 @@ def chart_it():
     selected_default_day = st.selectbox(
         label="Please Enter the day which week starts in you'r region",
         options=days_of_week,
-        index=6,
+        index=5,
     )
 
     def show_image():
+        """A function that when it activates with a button, it shows the figures."""
+
         pics = [
             ("line.png", "Line Chart Indicating Your recorded time over weeks"),
             ("pie.png", "Detailed Data on What Hour You Spent On What"),
@@ -238,6 +251,7 @@ def chart_it():
             st.image(image, caption=caption)
 
     if st.button("Show the Week's Status", type="primary"):
+        # ()  First I create the PNG's using lm.chart_it then send images.
         if lm.chart_it(week=selected_week, start_day=selected_default_day):
             st.success("The Figures Are Ready")
             show_image()
@@ -254,6 +268,7 @@ def chart_it():
     )
 
     def binary_pics(chart_type):
+        """This Function uniquely designed to send back the binary of 3 files"""
 
         chart_types = {"line": "line", "pie": "pie", "bar": "bar"}
 
@@ -263,6 +278,7 @@ def chart_it():
         with open(path, "rb") as fh:
             return fh.read()
 
+    # % This list will contain 3 boolean values
     flag = [
         os.path.exists(j)
         for j in {
@@ -289,6 +305,7 @@ def chart_it():
                 )
 
             case _:
+                # % For this part, I will first, Zip the 3 pic's then send them.
                 zip_path = os.path.join(os.environ["FIGURES_PATH"], "LM_figures.zip")
                 with ZipFile(zip_path, "w") as zipfh:
                     paths = {
@@ -316,7 +333,7 @@ def chart_it():
             }
         ),
 
-        #! using list comprehension to remove files and since no variable will point to this, GC will remove it.
+        #! using list comprehension to remove files and since no variable will point to this list , GC will remove it.
 
         [
             os.remove(i) if os.path.exists(i) else None
@@ -330,6 +347,7 @@ def chart_it():
 
 
 def show_tasks():
+    """This Function Simple make 3 DataFrames and shows it."""
     lm: LifeManager = st.session_state.LifeManager
 
     st.header("All Tasks", divider="green")
@@ -378,7 +396,8 @@ def DataGuardian():
     if "backup_ready" not in st.session_state:
         st.session_state.backup_ready = False
 
-    if st.button("Backup Now"):
+    st.header("Backup Now", divider="rainbow")
+    if st.button("Backup"):
 
         if lm.backup():
             st.session_state.backup_ready = True
@@ -405,15 +424,15 @@ def DataGuardian():
             mime="application/octet-stream",
         )
 
-    st.markdown("<hr style='border: 1px solid aqua;'>", unsafe_allow_html=True)
+    st.header("Upload your backup DATABASE", divider="red")
+    # $ Allows user to upload backups.
     uploaded_file = st.file_uploader(
-        "Upload your backup DATABASE file here or leave is empty for RESTORING THE Latest update."
+        " ", type=".backup", help="Just accepts `.backup` files"
     )
 
     if uploaded_file is not None:
-
-        with open("temp_backup_file", "wb") as f:
-            f.write(uploaded_file.getbuffer())
+        with open("temp_backup_file", "wb") as fh:
+            fh.write(uploaded_file.getbuffer())
 
         if st.button("Restore Backup"):
             success = lm.restore_backup(backup_path="temp_backup_file")
@@ -447,8 +466,57 @@ def DataGuardian():
 
 
 def insert_task():
-    lm: LifeManager = st.session_state.LifeManager
+    """This function corresponds exactly with lm.insert_into_weekly_table"""
 
+    lm: LifeManager = st.session_state.LifeManager
+    tm: CTimer = st.session_state.Timer
+
+    st.header("Inserting Task Section", divider="rainbow")
+
+    if "insert_duration" not in st.session_state:
+        st.session_state.insert_duration = None
+
+    if st.session_state.insert_duration is None:
+        st.error(
+            "You need a **Time** to Continue, Enter your time or you Start the Timer?"
+        )
+
+    if st.checkbox(label="Custom Duration"):
+        custom_time = st.number_input(label="Enter You custom Time :")
+        custom_timeframe = st.selectbox(
+            label="Choose You'r TimeFrame", options=["Seconds", "Minutes", "Hours"]
+        )
+
+    if st.checkbox("Timer Section"):
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            if st.button("Start"):
+                tm.start()
+
+        with col2:
+            try:
+                if st.button("Pause"):
+                    tm.pause()
+            except:
+                st.error("First initiate the start using **start** method")
+
+        with col3:
+            try:
+                if st.button("Resume"):
+                    tm.resume()
+            except:
+                st.error("Timer has not been paused")
+        with col4:
+
+            if st.button("End"):
+                kh = tm.time_it()
+    try:
+        print(kh)
+        print(custom_time)
+    except:
+        pass
+    st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
     st.info("Click the button bellow to go to the MainPage:")
     st.button(
         "CLICK...",
