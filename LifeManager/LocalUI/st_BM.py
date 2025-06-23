@@ -19,6 +19,7 @@ def main():
         opts = {
             "Add Bank": adding_bank,
             "Show All Banks": show_all_banks,
+            "Add Expenses": add_expenses,
             "Add Expense": show_expenses,
             "Make Transaction": make_transaction,
             "See Banking Records": banking_record,
@@ -95,6 +96,86 @@ def show_all_banks():
         on_click=lambda: st.session_state.update(
             {
                 "show_bank_selectbox": True,
+            }
+        ),
+    )
+
+
+def add_expenses():
+    bnk: CBanker = st.session_state.Banker
+
+    st.header("Adding Expense to the Database.", divider="red")
+    st.markdown(
+        """
+<p style='font-size:25px;color:lightgreen'> In this Section you will add Expenses to the database as a <b>PARENT/CHILD</b>.
+The difference between PARENT and CHILD Expense is as differ from one person to another:</p> 
+
+<p style='font-size:25px;color:aqua'>For One person, buying <b>Tobacco</b> is a Child Expense under <b>wasting money</b> Parent Expense, but for other person, it is his/her main expense.</p>""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        body="""<p style='font-size:24px;'><b>Please Fill :</b></p>""",
+        unsafe_allow_html=True,
+    )
+
+    #! Present the user a text input to put something in it; Simultiansly Make the parent_task variable.
+    _task = st.text_input(label=f"Please Enter the **Expense Name**:")
+    parent_expense = None
+
+    # $ This Check box indicate that if user want to the `_task` variable be a Parent or a Child.
+    x = st.checkbox(
+        "I want to ad this as a **Child** Expense",
+        help="Checking this box means that this task is child of another Expense.",
+    )
+    if x:
+        parent_expense = st.selectbox(
+            label="**Please Enter The Parent of your child:**",
+            options=bnk._get_all_parent_expenses(),
+        )
+    st.divider()
+
+    st.warning(
+        f"""
+    **Confirmation Required**
+
+    You are about to add:
+    
+    - Expense: {_task}
+    - Type: {"PARENT" if parent_expense is None else f"CHILD OF {parent_expense.upper()}"}
+
+    Please confirm.
+    """
+    )
+
+    def Confirm_add_daily_task():
+        """This function tries to add the task to the database then we make a flag for after clicking the bellow button."""
+
+        if bnk.add_expense(expense_name=_task, ref_to=parent_expense):
+            st.session_state.feedback = True
+        else:
+            st.session_state.feedback = False
+
+    st.button(label="CONFIRM", on_click=Confirm_add_daily_task)
+
+    if "feedback" in st.session_state:
+        if st.session_state.feedback:
+            st.success("Successfully added to the DATABASE!")
+        else:
+            st.error("There was an error while adding to the DATABASE")
+
+    st.markdown("<hr style='border: 1px solid red;'>", unsafe_allow_html=True)
+
+    st.info("Click the button bellow to go to the Main Page:")
+
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
             }
         ),
     )
