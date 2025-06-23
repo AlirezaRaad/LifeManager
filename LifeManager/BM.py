@@ -301,6 +301,10 @@ class CBanker(Cursor):
                     (expense_name, parent_id),
                 )
                 return True
+
+            except UniqueViolation:
+                return True
+
             except Exception:
                 logger.exception(
                     f"There is an error in adding {expense_name} to the banks TABLE with {ref_to} as its parent."
