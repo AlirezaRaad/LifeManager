@@ -19,8 +19,8 @@ def main():
         opts = {
             "Add Bank": adding_bank,
             "Show All Banks": show_all_banks,
-            "Add Expenses": add_expenses,
-            "Add Expense": show_expenses,
+            "Add Expense": add_expenses,
+            "Show All Expenses": show_expenses,
             "Make Transaction": make_transaction,
             "See Banking Records": banking_record,
             "Charting": bnk_charting,
@@ -182,7 +182,40 @@ The difference between PARENT and CHILD Expense is as differ from one person to 
 
 
 def show_expenses():
-    pass
+    bnk: CBanker = st.session_state.Banker
+
+    st.header("All Expenses", divider="green")
+    st.markdown(
+        """<p style='font-size:24px;color:aqua'>All the Expenses that you added to the DATABASE. </p>""",
+        unsafe_allow_html=True,
+    )
+
+    parent = pd.DataFrame(bnk._get_all_parent_expenses(), columns=["Parent Expenses"])
+
+    st.header("Parent Expenses", divider="violet")
+    st.dataframe(parent)
+
+    st.header("Child of Certain Expenses", divider="orange")
+    _task = st.selectbox(label="Select the Parent Expenses:", options=parent)
+
+    st.dataframe(
+        pd.DataFrame(
+            bnk._get_all_child_expenses(_task), columns=[f"Child Expenses of {_task}"]
+        )
+    )
+
+    st.info("Click the button bellow to go to the MainPage:")
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {
+                "lock_first": False,
+                "show_dropdown": True,
+                "LifeManager_main_header": True,
+            }
+        ),
+    )
 
 
 def make_transaction():

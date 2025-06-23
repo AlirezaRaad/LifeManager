@@ -109,7 +109,7 @@ class CBanker:
         """
         ...
 
-    def __get_all_parent_expenses(self) -> list:
+    def _get_all_parent_expenses(self) -> list:
         """Returns all the parent expense in a list.
 
         Returns:
