@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 from uuid import uuid4
 from zipfile import ZipFile
@@ -222,6 +223,50 @@ def show_expenses():
 
 
 def make_transaction():
+    bnk: CBanker = st.session_state.Banker
+    st.header("Record a Transaction", divider="rainbow")
+
+    usr_bank = st.selectbox(
+        label="Please Select you'r Bank: ", options=bnk.show_all_banks()
+    )
+
+    usr_amount = st.number_input(label="Enter The Amount of Transaction : ")
+
+    expense = st.selectbox(
+        label="Choose the Parent Expense : ", options=bnk._get_all_parent_expenses()
+    )
+
+    usr_expense = st.selectbox(
+        label="Now Choose You'r Expense: ", options=bnk._get_all_child_expenses(expense)
+    )
+
+    user_description = st.text_input(
+        label="Enter Description : ", placeholder="Description"
+    )
+
+    st.markdown(
+        f"""<p style='font-size:24px;'>Conform:
+                - <b>Bank : </b> {usr_bank}</br>
+                - <b>Amount : </b> {usr_amount}</br>
+                - <b>Expense : </b> {usr_expense}</br>
+                - <b>Description : </b> {user_description} </p>
+""",
+        unsafe_allow_html=True,
+    )
+
+    if st.button("Confirm Transaction :"):
+        if bnk.make_transaction(
+            bank_name=usr_bank,
+            amount=usr_amount,
+            expense_type=usr_expense,
+            description="null" if not bool(user_description) else user_description,
+        ):
+            st.success("Transaction made Successfully.")
+        else:
+            st.error(
+                "Transaction neither failed nor you don't have any credit left to spend."
+            )
+
     st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
     st.markdown(
         "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",
@@ -239,6 +284,51 @@ def make_transaction():
 
 
 def banking_record():
+    bnk: CBanker = st.session_state.Banker
+    st.header("Banking Records:", divider="rainbow")
+
+    usr_bank = st.selectbox(label="Select Your bank: ", options=bnk.show_all_banks())
+    col1, col2 = st.columns(2)
+
+    with col1:
+        yesterday = dt.date.today() - dt.timedelta(days=1)
+        from_date = st.date_input(label="From : ", value=yesterday, max_value=yesterday)
+    with col2:
+
+        to_date = st.date_input(label="To :")
+
+    st.markdown(
+        f"<p style='font-size:24px;'>See The transaction of {usr_bank} BANK, From {from_date} To {to_date} </p>",
+        unsafe_allow_html=True,
+    )
+
+    if st.button(label="Show"):
+        if bnk.fetch_records(
+            bank_name=usr_bank, start_date=f"{from_date}", end_date=f"{to_date}"
+        ):
+            st.success("Successful")
+            excel_folder = os.environ["BANKING_RECORD_PATH"]
+
+            # Filter files that start with the bank name
+            excel_path = [
+                os.path.join(excel_folder, i)
+                for i in os.listdir(excel_folder)
+                if i.lower().startswith(usr_bank.lower())
+            ]
+
+            st.dataframe(pd.read_excel(excel_path[0]))
+
+            with open(excel_path[0], "rb") as fh:
+                data = fh.read()
+
+            st.markdown(
+                f"<p style='font-size:24px;'>Download The Excel File: </p>",
+                unsafe_allow_html=True,
+            )
+            st.download_button(label="Download", file_name=excel_path[0], data=data)
+        else:
+            st.error("There Was an error!")
+
     st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
     st.markdown(
         "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",

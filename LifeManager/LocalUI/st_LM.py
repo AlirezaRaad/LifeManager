@@ -614,7 +614,6 @@ def insert_task():
 
         def inserting(lm: LifeManager = lm):
             desc = st.session_state.insert_description
-            print(bool(desc))
             if lm.insert_into_weekly_table(
                 duration=st.session_state.insert_duration,
                 task_id=lm.fetch_task_id(st.session_state.insert_task),
