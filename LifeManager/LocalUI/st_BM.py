@@ -1,5 +1,6 @@
 import os
 from uuid import uuid4
+from zipfile import ZipFile
 
 import pandas as pd
 import streamlit as st
@@ -82,7 +83,6 @@ def adding_bank():
 
 
 def show_all_banks():
-    print(st.session_state)
     bnk: CBanker = st.session_state.Banker
 
     st.header("All Bankss", divider="rainbow")
@@ -166,17 +166,17 @@ The difference between PARENT and CHILD Expense is as differ from one person to 
             st.error("There was an error while adding to the DATABASE")
 
     st.markdown("<hr style='border: 1px solid red;'>", unsafe_allow_html=True)
-
-    st.info("Click the button bellow to go to the Main Page:")
+    st.markdown(
+        "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",
+        unsafe_allow_html=True,
+    )
 
     st.button(
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
             {
-                "lock_first": False,
-                "show_dropdown": True,
-                "LifeManager_main_header": True,
+                "show_bank_selectbox": True,
             }
         ),
     )
@@ -205,26 +205,54 @@ def show_expenses():
         )
     )
 
-    st.info("Click the button bellow to go to the MainPage:")
+    st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",
+        unsafe_allow_html=True,
+    )
     st.button(
         "CLICK...",
         key=str(uuid4()),
         on_click=lambda: st.session_state.update(
             {
-                "lock_first": False,
-                "show_dropdown": True,
-                "LifeManager_main_header": True,
+                "show_bank_selectbox": True,
             }
         ),
     )
 
 
 def make_transaction():
-    pass
+    st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",
+        unsafe_allow_html=True,
+    )
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {
+                "show_bank_selectbox": True,
+            }
+        ),
+    )
 
 
 def banking_record():
-    pass
+    st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",
+        unsafe_allow_html=True,
+    )
+    st.button(
+        "CLICK...",
+        key=str(uuid4()),
+        on_click=lambda: st.session_state.update(
+            {
+                "show_bank_selectbox": True,
+            }
+        ),
+    )
 
 
 def bnk_charting():
@@ -257,22 +285,63 @@ try to **add a transaction** to update the data.
 
         pics = [i for i in os.listdir(figures_dir) if i.startswith("bank_")]
 
-        pics_path = [(os.path.join(figures_dir, i), f"{i} Bank") for i in pics]
+        pics_path = [
+            (
+                os.path.join(figures_dir, i),
+                f"Bank {i.removeprefix("bank_").removesuffix(".png")}",
+            )
+            for i in pics
+        ]
 
         for image_path, caption in pics_path:
             st.image(image_path, caption=caption)
 
+        # % For this part, I will first, Zip the pic's then send them.
+        zip_path = os.path.join(os.environ["FIGURES_PATH"], "BM_figures.zip")
+
+        with ZipFile(zip_path, "w") as zipfh:
+            for i in pics_path:
+                zipfh.write(i[0], arcname=os.path.basename(i[0]))
+
+        # Read the ZIP content
+        with open(zip_path, "rb") as fh:
+            zip_content = fh.read()
+
+            # Download button in Streamlit
+            st.download_button(
+                label="Download All Figures",
+                data=zip_content,
+                file_name="BM_figures.zip",
+                mime="application/zip",
+            )
+
     if last_x_days_int:
         if st.button("Show the Week's Status", type="primary"):
-            try:
-                if bnk.chart_it(last_x_days=last_x_days_int):
-                    st.success("The Figures Are Ready")
-                    show_image()
-                else:
-                    st.error("A problem occurred while making the figures")
-            except Exception as e:
+
+            if bnk.chart_it(last_x_days=last_x_days_int):
+                st.success("The Figures Are Ready")
+                show_image()
+            else:
                 st.error("A problem occurred while making the figures")
-                st.write(f"Error details: {e}")
+
+    def return_to_main():
+        [
+            os.remove(i) if os.path.exists(i) else None
+            for i in {os.path.join(os.environ["FIGURES_PATH"], "BM_figures.zip")}
+        ]
+        st.session_state.update(
+            {
+                "show_bank_selectbox": True,
+            }
+        ),
+
+    st.markdown("<hr style='border: 1px solid yellow;'>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='font-size:24px;'>Click the button bellow to go to the Main Banking Page</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.button("CLICK...", key=str(uuid4()), on_click=return_to_main)
 
 
 if __name__ == "__main__":
