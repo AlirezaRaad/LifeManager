@@ -96,37 +96,6 @@ class LifeManager(Cursor):
             logger.exception(f"In add_daily_task method")
             return False
 
-    def _create_daily_tasks_table(self) -> bool:
-
-        with self._cursor() as cursor:
-            try:
-                # GOAL: This Created The Table with Unique Constrain on both columns but not (taskName,NULL)
-                cursor.execute(
-                    """CREATE TABLE dailytasks (id SERIAL PRIMARY KEY, taskName TEXT, parentTaskId INTEGER,
-                            CONSTRAINT FK_self_parent_name FOREIGN KEY (parentTaskId) REFERENCES dailytasks(id),
-                            CONSTRAINT unique_rows UNIQUE(taskName, parentTaskId));"""
-                )
-
-                # GOAL: Now I manually made (taskName,NULL) a UNIQUE.
-                cursor.execute(
-                    """CREATE UNIQUE INDEX unique_null_parent_task ON dailytasks(taskName) WHERE parentTaskId IS NULL;"""
-                )
-
-                return True
-
-            except DuplicateTable:
-                return True
-
-            except UniqueViolation:
-                logger.exception(
-                    f"In _create_daily_tasks_table Method You have Duplicate Key: "
-                )
-                return True
-            except Exception as e:
-                logger.exception(f"In _create_daily_tasks_table Method:")
-
-                return False
-
     def get_all_parent_tasks(self):
         with self._cursor() as cursor:
             cursor.execute("SELECT * from dailytasks WHERE parentTaskId IS NULL")
