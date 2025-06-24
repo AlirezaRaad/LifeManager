@@ -13,7 +13,6 @@ from .Cursor import Cursor
 from .logger_config import logger
 
 
-# TODO: first on charting, delete every picture and not just override it, maybe a bank do not have a transacttion in the given period and before you make a fig that the certain bank has a period on it, thiss will make it so one figure be differ from another in teh term of charting period.
 class CBanker(Cursor):
     def __init__(self, minconn=1, maxconn=10):
         super().__init__(minconn, maxconn)
@@ -67,10 +66,36 @@ class CBanker(Cursor):
             # GOAL: This Created The Table Banks for future foreign key.
             with self._cursor() as cursor:
                 cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS banks (
-                            id SERIAL PRIMARY KEY,
-                            bankName TEXT UNIQUE NOT NULL
-                        );"""
+                    """CREATE TABLE IF NOT EXISTS banks (id SERIAL PRIMARY KEY,bankName TEXT UNIQUE NOT NULL);"""
+                )
+
+                cursor.execute(
+                    """
+                    CREATE OR REPLACE FUNCTION lowercase_name()
+                    RETURNS TRIGGER AS $$
+                    BEGIN
+                        NEW.bankName := LOWER(NEW.bankName);
+                        RETURN NEW;
+                    END;
+                    $$ LANGUAGE plpgsql;
+                """
+                )
+
+                cursor.execute(
+                    """
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_trigger WHERE tgname = 'trg_lowercase_name'
+                        ) THEN
+                            CREATE TRIGGER trg_lowercase_name
+                            BEFORE INSERT OR UPDATE ON banks
+                            FOR EACH ROW
+                            EXECUTE FUNCTION lowercase_name();
+                        END IF;
+                    END;
+                    $$;
+                """
                 )
                 return True
 

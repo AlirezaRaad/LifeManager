@@ -37,8 +37,6 @@ class LifeManager(Cursor):
         load_dotenv()
         super().__init__(minconn, maxconn)
 
-        self.make_psql_db()
-
         self.current_week_name = None
 
         self.make_weekly_tables()
@@ -52,45 +50,6 @@ class LifeManager(Cursor):
             caller_info = "Caller info not available"
 
         logger.info(f"Made new instance of LifeManage — called from {caller_info}")
-
-    def make_psql_db(self):
-
-        #! NOTE: I specifically DID NOT use connection pool for this one because I the dbname is set to postgres and
-        #! this method is a kick start for the database creation and What pool should give to a db that it isn't created
-        #! Yet! LOL
-
-        conn_params = {
-            "dbname": "postgres",  # Connect to the default 'postgres' database
-            "user": self._config["user"],
-            "password": self._config["password"],
-            "host": self._config["host"],
-            "port": self._config["port"],
-        }
-        try:
-            # Connect to the PostgreSQL server
-            conn = psql.connect(**conn_params)
-            conn.autocommit = True  # Enable autocommit for CREATE DATABASE
-
-            cursor = conn.cursor()
-
-            # Create the new database
-            cursor.execute(sql.SQL("CREATE DATABASE workmanager;"))
-
-            logger.info(f"Postgres Database initiated successfully!")
-            return True
-
-        except DuplicateDatabase:
-
-            logger.info("Database is already initiated")
-            return True
-
-        except Exception as e:
-            logger.exception(f"In database creation")
-            return False
-
-        finally:
-            cursor.close()
-            conn.close()
 
     def add_daily_task(self, task_name: str, *, ref_to=None) -> bool:
 
