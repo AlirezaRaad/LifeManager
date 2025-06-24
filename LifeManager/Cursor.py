@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import psycopg2 as psql
 from dotenv import load_dotenv
 from psycopg2 import sql
+from psycopg2.errors import DuplicateDatabase
 from psycopg2.pool import SimpleConnectionPool
 
 from .logger_config import logger

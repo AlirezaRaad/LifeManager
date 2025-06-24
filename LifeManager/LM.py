@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 from matplotlib import colormaps
 from psycopg2 import sql
 from psycopg2.errors import (
-    DuplicateDatabase,
     DuplicateTable,
     ForeignKeyViolation,
     InvalidTextRepresentation,
