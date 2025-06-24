@@ -13,6 +13,7 @@ from .Cursor import Cursor
 from .logger_config import logger
 
 
+# TODO: first on charting, delete every picture and not just override it, maybe a bank do not have a transacttion in the given period and before you make a fig that the certain bank has a period on it, thiss will make it so one figure be differ from another in teh term of charting period.
 class CBanker(Cursor):
     def __init__(self, minconn=1, maxconn=10):
         super().__init__(minconn, maxconn)
@@ -341,6 +342,27 @@ class CBanker(Cursor):
 
     def chart_it(self, last_x_days: int = 30):
         os.makedirs("figures", exist_ok=True)
+
+        # % Cleaning any old figure, that it wont have been replace, due lack of data.
+        # % The Above comment means that, assume I put the last_x_days = 10 and some of my bank were not active during
+        # %  The 10 day so this method wont create any figure for or won't replace the old figure.
+
+        # % So a bug will rise silently; If I first put last_x_days = 50, assume that 4 pics this method creates or replaces.
+        # % Then I put last_x_days = 10, The program create or replace 2 pics. So in total we have 4 pics with different durations.
+
+        # % And that why I implemented this list comprehension bellow.
+        [
+            os.remove(i) if os.path.exists(i) else None
+            for i in {
+                os.path.join(os.environ["FIGURES_PATH"], i)
+                for i in [
+                    j
+                    for j in os.listdir(os.environ["FIGURES_PATH"])
+                    if j.startswith("bank_")
+                ]
+            }
+        ]
+
         with self._cursor() as cursor:
             cursor.execute("SELECT *  FROM bankexpensetype")
             _ = cursor.fetchall()
