@@ -102,7 +102,7 @@ To launch the graphical interface, follow these steps:
     ui = UILauncher()
     ```
 
-    > ⚠️ This Uses you `8569` port.
+    > ⚠️ This Uses you `8569` port. If you want this port or an error occurred use `ui.kill_port_8569()` to kill the port and free it up.
 
 3. **Start or stop the interface:**
 

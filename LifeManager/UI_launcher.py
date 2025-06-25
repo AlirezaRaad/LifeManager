@@ -1,16 +1,14 @@
 import os
-import socket
+import signal
 import subprocess
 from typing import Optional
 
+import psutil
 from dotenv import load_dotenv
 
 
 class UILauncher:
     def __init__(self):
-
-        # if self.is_port_in_use(8569 if port is None else port):
-        #     raise OSError(f"Port {port} is already in use")
 
         self.port = "8569"
         self.process = None
@@ -31,7 +29,7 @@ class UILauncher:
         print("Checking to see if UI is running or no...")
 
         if self.process:
-            print(f"Process is Already running at 'localhost:{self.port}'")
+            print(f"Process is Already running at http://localhost:{self.port}")
             return True
         else:
             try:
@@ -70,14 +68,46 @@ class UILauncher:
             print("No UI process is currently running.")
             return False
 
-    # @staticmethod
-    # def is_port_in_use(port, host="127.0.0.1"):
-    #     """True if port in use"""
+    def kill_port_8569(self, force: bool = True) -> bool:
 
-    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    #         s.settimeout(1)  # Optional timeout
-    #         try:
-    #             s.bind((host, port))
-    #             return False  # Port is free
-    #         except OSError:
-    #             return True  # Port is in use
+        pid = self.__find_pid_using_port(self.port)
+        if pid:
+            # print(f"Port {self.port} is in use by PID {pid}")
+            if self.__kill_process(pid, force):
+                print(f"Successfully killed process {pid}")
+                return True
+            else:
+                print(f"Failed to kill process {pid}")
+                return False
+        else:
+            print(f"Port {self.port} is already free")
+            return False
+
+    @staticmethod
+    def __kill_process(pid: int, force: bool = False) -> bool:
+        """
+        Kills the process with the given PID.
+        If force=True, sends SIGKILL (Unix only), otherwise SIGTERM.
+        """
+        try:
+            sig = (
+                signal.SIGKILL
+                if force and hasattr(signal, "SIGKILL")
+                else signal.SIGTERM
+            )
+            os.kill(pid, sig)
+            return True
+        except Exception as e:
+            print(f"Failed to kill PID {pid}: {e}")
+            return False
+
+    @staticmethod
+    def __find_pid_using_port(port: int) -> int | None:
+        """
+        Returns the PID of the process using the given port, or None if free.
+        """
+
+        for conn in psutil.net_connections(kind="inet"):
+            if conn.laddr and conn.laddr.port == port and conn.pid:
+                return conn.pid
+        return None
