@@ -191,7 +191,7 @@ class CBanker(Cursor):
         mapping_idx = {i[0]: i[1] for i in _}
 
         engin = create_engine(
-            f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+            f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/lifemanager",
             pool_size=10,
         )
 
@@ -288,7 +288,7 @@ class CBanker(Cursor):
 
         try:
             engin = create_engine(
-                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/lifemanager",
                 pool_size=10,
             )
             query = text(

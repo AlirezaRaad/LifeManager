@@ -217,7 +217,7 @@ class LifeManager(Cursor):
 
         os.makedirs("backup", exist_ok=True)
         timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d_%H%M%S")
-        output_path = f"backup/workmanager_backup_{timestamp}.backup"
+        output_path = f"backup/lifemanager_backup_{timestamp}.backup"
 
         command = [
             "pg_dump",
@@ -225,7 +225,7 @@ class LifeManager(Cursor):
             "c",
             "-f",
             output_path,
-            "workmanager",
+            "lifemanager",
         ]
 
         try:
@@ -245,13 +245,13 @@ class LifeManager(Cursor):
                 )
             )
         restore_command = (
-            f"pg_restore  -d workmanager --clean --if-exists {backup_path}"
+            f"pg_restore  -d lifemanager --clean --if-exists {backup_path}"
         )
 
         try:
             subprocess.run(restore_command, check=True, shell=True)
             logger.info(
-                f"Database 'workmanager' restored successfully from {backup_path}."
+                f"Database 'lifemanager' restored successfully from {backup_path}."
             )
             return True
         except subprocess.CalledProcessError as e:
@@ -265,7 +265,7 @@ class LifeManager(Cursor):
         try:
             # Makes an engin to connect to psql using pandas.
             engin = create_engine(
-                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/lifemanager",
                 pool_size=10,
             )
 
@@ -300,7 +300,7 @@ class LifeManager(Cursor):
         # Makes an engin to connect to psql using pandas.
         try:
             engin = create_engine(
-                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/workmanager",
+                f"postgresql://{os.environ["PGUSER"]}:{os.environ["PGPASSWORD"]}@{os.environ.get("PGHOST", "localhost")}:{os.environ.get("PGPORT", "5432")}/lifemanager",
                 pool_size=10,
             )
 
@@ -308,6 +308,7 @@ class LifeManager(Cursor):
 
             df = pd.read_sql(query, engin)
             df["duration"] = df["duration"].apply(lambda x: round(x / 3600, 2))
+            print(df)
 
         except UndefinedTable:
             return False

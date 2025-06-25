@@ -359,7 +359,7 @@ The **Cursor module** provides the `Cursor` class, a thin wrapper around a Postg
 
 - **Environment-Driven Configuration**  
   - Loads `.env` with `python-dotenv` to populate `PGUSER`, `PGPASSWORD`, `PGHOST`, and `PGPORT`.  
-  - Defaults to database name `workmanager` (override by editing `.env` or code).
+  - Defaults to database name `lifemanager` (override by editing `.env` or code).
 
 - **Context-Managed Cursors**  
   - `@contextmanager _cursor()`:  
