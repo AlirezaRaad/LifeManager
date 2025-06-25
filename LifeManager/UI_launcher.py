@@ -7,12 +7,12 @@ from dotenv import load_dotenv
 
 
 class UILauncher:
-    def __init__(self, port: Optional[int] = None):
+    def __init__(self):
 
-        if self.is_port_in_use(8569 if port is None else port):
-            raise OSError(f"Port {port} is already in use")
+        # if self.is_port_in_use(8569 if port is None else port):
+        #     raise OSError(f"Port {port} is already in use")
 
-        self.port = str(port)
+        self.port = "8569"
         self.process = None
 
     load_dotenv()
@@ -70,14 +70,14 @@ class UILauncher:
             print("No UI process is currently running.")
             return False
 
-    @staticmethod
-    def is_port_in_use(port, host="127.0.0.1"):
-        """True if port in use"""
+    # @staticmethod
+    # def is_port_in_use(port, host="127.0.0.1"):
+    #     """True if port in use"""
 
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(1)  # Optional timeout
-            try:
-                s.bind((host, port))
-                return False  # Port is free
-            except OSError:
-                return True  # Port is in use
+    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #         s.settimeout(1)  # Optional timeout
+    #         try:
+    #             s.bind((host, port))
+    #             return False  # Port is free
+    #         except OSError:
+    #             return True  # Port is in use
