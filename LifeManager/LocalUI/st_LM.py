@@ -140,6 +140,8 @@ The difference between PARENT and CHILD task is as following:</p>
         body="""<p style='font-size:24px;'><b>Please Fill :</b></p>""",
         unsafe_allow_html=True,
     )
+    if "feedback" not in st.session_state:
+        st.session_state.feedback = False
 
     #! Present the user a text input to put something in it; Simultiansly Make the parent_task variable.
     _task = st.text_input(label=f"Please Enter the **Task Name**:")
@@ -170,21 +172,18 @@ The difference between PARENT and CHILD task is as following:</p>
     """
     )
 
-    def Confirm_add_daily_task():
+    col = st.columns(1)[0]
+
+    def confirm_add_daily_task():
         """This function tries to add the task to the database then we make a flag for after clicking the bellow button."""
         lm: LifeManager = st.session_state.LifeManager
+
         if lm.add_daily_task(task_name=_task, ref_to=parent_task):
-            st.session_state.feedback = True
+            col.success(f"Successfully added {_task}!")
         else:
-            st.session_state.feedback = False
+            col.error("There was an error while adding!")
 
-    st.button(label="CONFIRM", on_click=Confirm_add_daily_task)
-
-    if "feedback" in st.session_state:
-        if st.session_state.feedback:
-            st.success("Successfully added to the DATABASE!")
-        else:
-            st.error("There was an error while adding to the DATABASE")
+    st.button(label="CONFIRM", on_click=confirm_add_daily_task, key=f"{uuid4()}")
 
     st.markdown("<hr style='border: 1px solid red;'>", unsafe_allow_html=True)
 
