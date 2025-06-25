@@ -4,14 +4,14 @@
 I often found myself losing track of time—hours would pass without a clear sense of what I had actually done, And I had this time slippage in my life; So I decided to use my programming skills to build a Python package that helps me monitor and manage my day with greater precision.
 
 
-LifeManager (LM) not only helps me track how I spend my time, but it also includes both a [**Local UI interface**](#%EF%B8%8F-how-to-use-the-ui) and a [**Telegram bot**](#🤖-how-to-use-telegram-bot), so I can log and manage my activities from anywhere.
+LifeManager (LM) not only helps me track how I spend my time, but it also includes both a [**Local UI interface**](#%EF%B8%8F-how-to-use-the-ui) and a [**Telegram bot**](#-how-to-use-telegram-bot), so I can log and manage my activities from anywhere.
 
-____
+
 ## What is LifeManager?
 
 LifeManager is a program designed to help you track your daily tasks and monitor your banking expenses. It provides detailed reports on what you have accomplished and how much you have spent in various categories. 
 
-Additionally, LifeManager can generate charts and export data to Excel files, helping you visualize and analyze your time and money management more effectively.
+Additionally, LifeManager can generate charts and export data to Excel files, helping you visualize and analyze your time and money management more effectively.<br><br><br>
 
 
 # How to set it up
