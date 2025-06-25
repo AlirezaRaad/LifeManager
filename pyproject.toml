@@ -1,6 +1,6 @@
 [project]
 name = "LifeManager"
-version = "0.1.1"
+version = "1.0.0"
 description = "A simple Python package"
 authors = [{name = "Raad", email = "alirezzaraadco@gmail.com"}]
 requires-python = ">=3.12"
@@ -12,6 +12,7 @@ dependencies = [
   "psycopg2-binary>=2.9.10",
   "openpyxl>=3.1.5",
   "aiogram==3.20.0.post0",
+  "streamlit>=1.46.0"
 ]
 license = "MIT"
 readme = "README.md"
@@ -34,4 +35,4 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["LifeManager","LifeManager.telegram"]
+include = ["LifeManager","LifeManager.telegram","LifeManager.LocalUI"]
