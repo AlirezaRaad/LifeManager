@@ -73,27 +73,6 @@ class CBanker(Cursor):
                 logger.exception("The Balance was about to get NEGATIVE.")
                 return False
 
-    # def __create_bank_expense_type_table(self):
-
-    #     with self._cursor() as cursor:
-    #         try:
-    #             # GOAL: This Created The Table with Unique Constrain on both columns but not (expenseName,NULL)
-    #             cursor.execute(
-    #                 """CREATE TABLE IF NOT EXISTS bankexpensetype (id SERIAL PRIMARY KEY, expenseName TEXT UNIQUE, parentExpenseId INTEGER,
-    #                         CONSTRAINT FK_self_parent_expense FOREIGN KEY (parentExpenseId) REFERENCES bankexpensetype(id),
-    #                         CONSTRAINT unique_expense_rows UNIQUE(expenseName, parentExpenseId));"""
-    #             )
-
-    #             # GOAL: Now I manually made (expenseName,NULL) a UNIQUE.
-    #             cursor.execute(
-    #                 """CREATE UNIQUE INDEX IF NOT EXISTS unique_null_parent_expense ON bankexpensetype(expenseName) WHERE parentExpenseId IS NULL;"""
-    #             )
-    #             return True
-
-    #         except:
-    #             logger.exception("An Error in creating BankExpenseType TABLE")
-    #             return False
-
     def fetch_expense_id(self, expense_name) -> int | bool:
         with self._cursor() as cursor:
             cursor.execute(

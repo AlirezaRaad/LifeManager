@@ -16,7 +16,6 @@ from psycopg2.pool import SimpleConnectionPool
 from .logger_config import logger
 
 
-# TODO : Bring all making the tables in here.
 class Cursor:
     def __init__(self, minconn=1, maxconn=10):
 
