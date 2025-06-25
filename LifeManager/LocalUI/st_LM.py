@@ -545,7 +545,7 @@ def insert_task():
                 if st.button("End"):
                     user_entered_time = tm.time_it()
                     st.success(
-                        f"Timer Ended, Recorded Time {user_entered_time} Seconds..."
+                        f"Timer Ended, Recorded Time {user_entered_time:,.2f} Seconds..."
                     )
 
         if user_entered_time is not None:
