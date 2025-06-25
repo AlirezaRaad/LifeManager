@@ -13,6 +13,7 @@ class UILauncher:
             raise OSError(f"Port {port} is already in use")
 
         self.port = str(port)
+        self.process = None
 
     load_dotenv()
 
@@ -35,7 +36,7 @@ class UILauncher:
         else:
             try:
                 self.process = subprocess.Popen(
-                    ["streamlit", "run", module_path, "--server.port", self.port],
+                    ["streamlit", "run", module_path, "--server.port", str(self.port)],
                     env=env,
                 )
                 return True
@@ -45,7 +46,29 @@ class UILauncher:
                 return False
 
     def stop(self):
-        pass
+        if self.process:
+            print(f"Stopping the UI running at 'localhost:{self.port}'...")
+            try:
+                # Terminate the subprocess
+                self.process.terminate()
+                self.process.wait(timeout=5)
+                self.process = None
+                print("UI successfully stopped.")
+                return True
+
+            except subprocess.TimeoutExpired:
+                print("Graceful shutdown failed, forcing termination...")
+                self.process.kill()
+                self.process.wait()
+                self.process = None
+                return True
+
+            except Exception as e:
+                print(f"Error while stopping the UI: {e}")
+                return False
+        else:
+            print("No UI process is currently running.")
+            return False
 
     @staticmethod
     def is_port_in_use(port, host="127.0.0.1"):
