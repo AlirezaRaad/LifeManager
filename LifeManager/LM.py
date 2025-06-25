@@ -308,7 +308,6 @@ class LifeManager(Cursor):
 
             df = pd.read_sql(query, engin)
             df["duration"] = df["duration"].apply(lambda x: round(x / 3600, 2))
-            print(df)
 
         except UndefinedTable:
             return False
