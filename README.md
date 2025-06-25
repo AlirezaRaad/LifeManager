@@ -99,10 +99,10 @@ To launch the graphical interface, follow these steps:
 2. **Create a UI instance with a desired port:**
 
     ```python
-    ui = UILauncher(8569)
+    ui = UILauncher()
     ```
 
-    > ⚠️ If the specified port is already in use, an `OSError` will be raised.
+    > ⚠️ This Uses you `8569` port.
 
 3. **Start or stop the interface:**
 
