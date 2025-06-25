@@ -1,12 +1,17 @@
-# Why I made LM(LifeManager)?
+# ❓ Why I Made LM (LifeManager)
 
 
-I have a lot of time slippage in my life and time passes without me realizing what I was doing with my time,So I decided to use my knowledge and make a python package that I track my day with better precision and then make a telegram interface for to use this everywhere using a telegramBOT.
+I often found myself losing track of time—hours would pass without a clear sense of what I had actually done, And I had this time slippage in my life; So I decided to use my programming skills to build a Python package that helps me monitor and manage my day with greater precision.
+
+
+LifeManager (LM) not only helps me track how I spend my time, but it also includes both a **Local UI interface** and a **Telegram bot**, so I can log and manage my activities from anywhere.
 
 ____
-# What is LifeManager?
+## What is LifeManager?
 
-It is basically a program that helps you track you daily tasks and expense and then you can get a report on what you done or how much you spend on something. You can get chart and excel files for your spend time and money.
+LifeManager is a program designed to help you track your daily tasks and monitor your banking expenses. It provides detailed reports on what you have accomplished and how much you have spent in various categories. 
+
+Additionally, LifeManager can generate charts and export data to Excel files, helping you visualize and analyze your time and money management more effectively.
 
 
 # How to set it up
@@ -81,6 +86,30 @@ if __name__ == "__main__":
 ```
 
 Your Done! Enjoy ....
+## 🖥️ How to Use the UI
+
+To launch the graphical interface, follow these steps:
+
+1. **Import the launcher:**
+
+    ```python
+    from LifeManager.UI_launcher import UILauncher
+    ```
+
+2. **Create a UI instance with a desired port:**
+
+    ```python
+    ui = UILauncher(8569)
+    ```
+
+    > ⚠️ If the specified port is already in use, an `OSError` will be raised.
+
+3. **Start or stop the interface:**
+
+    ```python
+    ui.start()  # Launches the UI
+    ui.stop()   # Stops the UI
+    ```
 
 ## How to use it raw
 
