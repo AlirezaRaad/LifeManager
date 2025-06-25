@@ -1,0 +1,2 @@
+include LifeManager/*.pyi
+include LifeManager/**/*.pyi
