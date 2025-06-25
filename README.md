@@ -4,7 +4,7 @@
 I often found myself losing track of time—hours would pass without a clear sense of what I had actually done, And I had this time slippage in my life; So I decided to use my programming skills to build a Python package that helps me monitor and manage my day with greater precision.
 
 
-LifeManager (LM) not only helps me track how I spend my time, but it also includes both a **Local UI interface** and a **Telegram bot**, so I can log and manage my activities from anywhere.
+LifeManager (LM) not only helps me track how I spend my time, but it also includes both a [**Local UI interface**](#%EF%B8%8F-how-to-use-the-ui) and a [**Telegram bot**](#🤖-how-to-use-telegram-bot), so I can log and manage my activities from anywhere.
 
 ____
 ## What is LifeManager?
@@ -34,7 +34,7 @@ cfg.change_PostgreSQL_host("your_host")   # e.g. "localhost"
 cfg.change_PostgreSQL_port(5432) # or your custom port
 ```
 
-## How to use Telegram BOT
+## 🤖 How to use Telegram BOT
 If you don't want to work with the CLI version and just simply work with the a telegram bot, 
 
 * first activate its flag with
